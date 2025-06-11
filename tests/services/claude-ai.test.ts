@@ -97,7 +97,7 @@ describe('ClaudeAIService', () => {
       
       expect(result).toBe('AI response here')
       expect(mockAnthropic.messages.create).toHaveBeenCalledWith({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         messages: [{
           role: 'user',
@@ -111,7 +111,7 @@ describe('ClaudeAIService', () => {
       
       expect(result).toBe('AI response here')
       expect(mockAnthropic.messages.create).toHaveBeenCalledWith({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         messages: [{
           role: 'user',
@@ -125,7 +125,7 @@ describe('ClaudeAIService', () => {
       
       expect(result).toBe('AI response here')
       expect(mockAnthropic.messages.create).toHaveBeenCalledWith({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         messages: [{
           role: 'user',
@@ -139,7 +139,7 @@ describe('ClaudeAIService', () => {
       
       expect(result).toBe('AI response here')
       expect(mockAnthropic.messages.create).toHaveBeenCalledWith({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         messages: [{
           role: 'user',
