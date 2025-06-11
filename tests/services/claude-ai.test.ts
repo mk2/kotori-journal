@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ClaudeAIService, KotoriMode, EmotionAnalysis } from '../../src/services/claude-ai'
+import { ClaudeAIService, EmotionAnalysis } from '../../src/services/claude-ai'
 import { JournalEntry } from '../../src/models/journal'
 
 // Mock the Anthropic SDK

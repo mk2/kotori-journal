@@ -189,7 +189,7 @@ ${this.getResponseInstructions(text, mode, emotion)}`
   /**
    * モードに応じたキャラクター設定を取得
    */
-  private getCharacterSettings(mode: KotoriMode, emotion: EmotionAnalysis): string {
+  private getCharacterSettings(mode: KotoriMode, _emotion: EmotionAnalysis): string {
     switch (mode) {
       case 'basic':
         return `### 基本モード（事務員モード）

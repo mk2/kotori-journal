@@ -81,14 +81,14 @@ export const App: React.FC<AppProps> = ({ config }) => {
       return
     }
 
-    const interval = setInterval(() => {
+    const interval = globalThis.setInterval(() => {
       setLoadingDots(prev => {
         if (prev.length >= 3) return ''
         return prev + '.'
       })
     }, 500)
 
-    return () => clearInterval(interval)
+    return () => globalThis.clearInterval(interval)
   }, [isProcessingAI])
 
   const handleSubmit = async () => {
