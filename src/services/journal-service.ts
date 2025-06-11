@@ -3,6 +3,7 @@ import { StorageService } from './storage'
 import { CategoryManager } from '../models/category'
 import { CategoryStorage } from './category-storage'
 import { DailyReportService } from './daily-report'
+import { ClaudeAIService } from './claude-ai'
 
 export class JournalService {
   private journal: Journal
@@ -10,6 +11,7 @@ export class JournalService {
   private categoryManager: CategoryManager
   private categoryStorage: CategoryStorage
   private dailyReportService: DailyReportService
+  private claudeAI?: ClaudeAIService
 
   constructor(dataPath: string) {
     this.journal = new Journal()
@@ -17,6 +19,14 @@ export class JournalService {
     this.categoryStorage = new CategoryStorage(dataPath)
     this.categoryManager = new CategoryManager()
     this.dailyReportService = new DailyReportService(this, dataPath)
+    
+    // Claude AIサービスは環境変数がある場合のみ初期化
+    try {
+      this.claudeAI = new ClaudeAIService()
+    } catch (error) {
+      // API キーがない場合は無視（AIなしで動作）
+      this.claudeAI = undefined
+    }
   }
 
   async initialize(): Promise<void> {
@@ -89,6 +99,27 @@ export class JournalService {
 
   isValidCategory(name: string): boolean {
     return this.categoryManager.isValidCategory(name)
+  }
+
+  // AI機能
+  isAIAvailable(): boolean {
+    return this.claudeAI !== undefined
+  }
+
+  isAITrigger(text: string): boolean {
+    return this.claudeAI?.isAITrigger(text) ?? false
+  }
+
+  async processAIRequest(text: string): Promise<string> {
+    if (!this.claudeAI) {
+      throw new Error('Claude AI is not available. Please set ANTHROPIC_API_KEY environment variable.')
+    }
+    
+    // 今日のエントリーを取得
+    const today = new Date()
+    const todayEntries = this.journal.getEntriesByDate(today)
+    
+    return this.claudeAI.processAIRequest(text, todayEntries)
   }
 
   private async clearPreviousDayTempEntries(tempEntries: JournalEntry[]): Promise<void> {

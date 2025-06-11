@@ -26,6 +26,8 @@ export const App: React.FC<AppProps> = ({ config }) => {
   const [searchService, setSearchService] = useState<SearchService | null>(null)
   const [mode, setMode] = useState<AppMode>('journal')
   const [categories, setCategories] = useState<string[]>([])
+  const [aiResponse, setAiResponse] = useState<string>('')
+  const [isProcessingAI, setIsProcessingAI] = useState(false)
 
   useEffect(() => {
     const initService = async () => {
@@ -72,16 +74,48 @@ export const App: React.FC<AppProps> = ({ config }) => {
   const handleSubmit = async () => {
     if (!journalService || !input.trim()) return
     
+    const inputText = input.trim()
+    
     try {
-      const entry = await journalService.addEntry(input.trim(), selectedCategory)
-      setEntries([...entries, entry])
-      setInput('')
-      setMessage('エントリーを保存しました')
-      
-      setTimeout(() => setMessage(''), 2000)
+      // AI トリガーをチェック
+      if (journalService.isAITrigger(inputText)) {
+        if (!journalService.isAIAvailable()) {
+          setMessage('AI機能が利用できません。ANTHROPIC_API_KEYを設定してください。')
+          setTimeout(() => setMessage(''), 3000)
+          return
+        }
+        
+        setIsProcessingAI(true)
+        setInput('')
+        setMessage('AIが応答を生成中...')
+        
+        try {
+          const response = await journalService.processAIRequest(inputText)
+          setAiResponse(response)
+          setMessage('')
+          
+          // AI応答を5秒後に自動クリア
+          setTimeout(() => setAiResponse(''), 10000)
+        } catch (aiError) {
+          setMessage('AI処理でエラーが発生しました')
+          console.error(aiError)
+          setTimeout(() => setMessage(''), 3000)
+        } finally {
+          setIsProcessingAI(false)
+        }
+      } else {
+        // 通常のジャーナルエントリー追加
+        const entry = await journalService.addEntry(inputText, selectedCategory)
+        setEntries([...entries, entry])
+        setInput('')
+        setMessage('エントリーを保存しました')
+        
+        setTimeout(() => setMessage(''), 2000)
+      }
     } catch (error) {
       setMessage('保存に失敗しました')
       console.error(error)
+      setTimeout(() => setMessage(''), 3000)
     }
   }
 
@@ -171,6 +205,9 @@ export const App: React.FC<AppProps> = ({ config }) => {
             Kotori Journal
           </Text>
           <Text dimColor> - Enter で送信 | Tab でカテゴリ切替 | Esc でメニュー | / で検索 | Ctrl+D で終了</Text>
+          {journalService?.isAIAvailable() && (
+            <Text color="magenta"> | AI利用可能(？質問, 要約して, アドバイスして)</Text>
+          )}
         </Box>
 
         {message && (
@@ -182,6 +219,16 @@ export const App: React.FC<AppProps> = ({ config }) => {
         <Box marginBottom={1}>
           <Text>今日の記録: {todayEntries.length}件</Text>
         </Box>
+
+        {/* AI応答表示 */}
+        {aiResponse && (
+          <Box marginBottom={1} padding={1} borderStyle="round" borderColor="magenta">
+            <Box flexDirection="column">
+              <Text bold color="magenta">AI応答:</Text>
+              <Text>{aiResponse}</Text>
+            </Box>
+          </Box>
+        )}
       </Box>
 
       {/* エントリー表示部分（最新10件、新しいものを下に） */}
@@ -219,7 +266,8 @@ export const App: React.FC<AppProps> = ({ config }) => {
           value={input}
           onChange={setInput}
           onSubmit={handleSubmit}
-          placeholder="記録を入力..."
+          placeholder={isProcessingAI ? "AI処理中..." : journalService?.isAIAvailable() ? "記録を入力... (？で質問, 要約して, アドバイスして)" : "記録を入力..."}
+          disabled={isProcessingAI}
         />
       </Box>
     </Box>
