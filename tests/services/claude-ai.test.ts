@@ -34,8 +34,17 @@ describe('ClaudeAIService', () => {
     })
 
     it('should throw error when API key is missing', () => {
+      const originalApiKey = process.env.ANTHROPIC_API_KEY
       delete process.env.ANTHROPIC_API_KEY
-      expect(() => new ClaudeAIService()).toThrow('ANTHROPIC_API_KEY environment variable is required')
+      
+      try {
+        expect(() => new ClaudeAIService()).toThrow('ANTHROPIC_API_KEY environment variable is required')
+      } finally {
+        // Restore the original API key
+        if (originalApiKey) {
+          process.env.ANTHROPIC_API_KEY = originalApiKey
+        }
+      }
     })
   })
 

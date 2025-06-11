@@ -80,8 +80,18 @@ kotori
 
 ### 設定
 
-AI機能を使用するには、環境変数 `ANTHROPIC_API_KEY` を設定してください：
+AI機能を使用するには、`ANTHROPIC_API_KEY` を設定してください。以下のいずれかの方法で設定できます：
 
+#### 方法1: .envファイル（推奨）
+```bash
+# .envファイルを作成
+cp .env.example .env
+
+# .envファイルを編集してAPIキーを設定
+ANTHROPIC_API_KEY=your-api-key-here
+```
+
+#### 方法2: 環境変数
 ```bash
 export ANTHROPIC_API_KEY="your-api-key-here"
 ```
