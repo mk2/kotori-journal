@@ -49,13 +49,19 @@ export class StorageService {
 
     for (const file of jsonFiles) {
       const filePath = path.join(tempDir, file)
-      const content = await fs.readFile(filePath, 'utf-8')
-      const data = JSON.parse(content)
+      try {
+        const content = await fs.readFile(filePath, 'utf-8')
+        const data = JSON.parse(content)
 
-      entries.push({
-        ...data,
-        timestamp: new Date(data.timestamp),
-      })
+        entries.push({
+          ...data,
+          timestamp: new Date(data.timestamp),
+        })
+      } catch (error) {
+        // ファイルが存在しない場合や読み込みエラーの場合は無視
+        // (並行実行で削除された可能性があるため)
+        console.warn(`Failed to read temp file ${filePath}:`, error)
+      }
     }
 
     return entries
