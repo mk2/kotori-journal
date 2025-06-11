@@ -7,7 +7,8 @@
     "kotori": "./dist/cli.js"
   },
   "scripts": {
-    "dev": "tsx watch src/cli.tsx",
+    "dev": "tsx src/cli.tsx",
+    "watch": "tsx watch src/cli.tsx",
     "build": "tsup",
     "test": "vitest",
     "test:ui": "vitest --ui",

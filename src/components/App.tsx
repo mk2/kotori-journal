@@ -41,35 +41,31 @@ export const App: React.FC<AppProps> = ({ config }) => {
     initService().catch(console.error)
   }, [config.dataPath])
 
-  useInput((input: string, key: any) => {
-    if (key.ctrl && input === 'c') {
+  useInput((inputChar: string, key: any) => {
+    // 終了キー: Ctrl+C または Ctrl+D（全モードで有効）
+    if (key.ctrl && (inputChar === 'c' || inputChar === 'd')) {
       exit()
+      return
     }
     
-    if (mode === 'journal') {
-      if (key.return && key.meta && journalService) {
-        if (input.trim()) {
-          handleSubmit()
-        }
-      }
-      
-      if (key.tab && mode === 'journal') {
-        const currentIndex = categories.indexOf(selectedCategory)
-        const nextIndex = (currentIndex + 1) % categories.length
-        setSelectedCategory(categories[nextIndex])
-      }
-      
-      if (key.escape) {
-        setMode('menu')
-      }
-      
-      if (input === '/' && mode === 'journal') {
-        setMode('search')
-      }
-    } else if (mode === 'menu' || mode === 'search' || mode === 'category') {
-      if (key.escape) {
-        setMode('journal')
-      }
+    // journalモード以外では処理しない
+    if (mode !== 'journal') return
+    
+    if (key.tab && categories.length > 0) {
+      const currentIndex = categories.indexOf(selectedCategory)
+      const nextIndex = (currentIndex + 1) % categories.length
+      setSelectedCategory(categories[nextIndex])
+      return
+    }
+    
+    if (key.escape) {
+      setMode('menu')
+      return
+    }
+    
+    if (inputChar === '/' && !input) {
+      setMode('search')
+      return
     }
   })
 
@@ -111,7 +107,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
     { label: 'ジャーナル入力に戻る', value: 'journal' },
     { label: '検索 (/)', value: 'search' },
     { label: 'カテゴリ管理', value: 'category' },
-    { label: '終了 (Ctrl+C)', value: 'exit' }
+    { label: '終了 (Ctrl+D)', value: 'exit' }
   ]
 
   if (mode === 'menu') {
@@ -167,38 +163,62 @@ export const App: React.FC<AppProps> = ({ config }) => {
   }
 
   return (
-    <Box flexDirection="column">
-      <Box marginBottom={1}>
-        <Text bold color="cyan">
-          Kotori Journal
-        </Text>
-        <Text dimColor> - Cmd+Enter で送信 | Tab でカテゴリ切替 | Esc でメニュー | / で検索</Text>
-      </Box>
-
-      {message && (
+    <Box flexDirection="column" height="100%">
+      {/* ヘッダー部分 */}
+      <Box flexDirection="column" flexShrink={0}>
         <Box marginBottom={1}>
-          <Text color="green">{message}</Text>
+          <Text bold color="cyan">
+            Kotori Journal
+          </Text>
+          <Text dimColor> - Enter で送信 | Tab でカテゴリ切替 | Esc でメニュー | / で検索 | Ctrl+D で終了</Text>
         </Box>
-      )}
 
-      <Box marginBottom={1}>
-        <Text>今日の記録: {todayEntries.length}件</Text>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        {todayEntries.slice(-5).map((entry, index) => (
-          <Box key={entry.id}>
-            <Text color="yellow">[{entry.category}]</Text>
-            <Text> {entry.content}</Text>
+        {message && (
+          <Box marginBottom={1}>
+            <Text color="green">{message}</Text>
           </Box>
-        ))}
+        )}
+
+        <Box marginBottom={1}>
+          <Text>今日の記録: {todayEntries.length}件</Text>
+        </Box>
       </Box>
 
-      <Box>
+      {/* エントリー表示部分（最新10件、新しいものを下に） */}
+      <Box flexDirection="column" flexGrow={1}>
+        {todayEntries.length === 0 ? (
+          <Box>
+            <Text dimColor>まだ記録がありません。下の入力欄から記録を追加してください。</Text>
+          </Box>
+        ) : (
+          todayEntries.slice(-10).map((entry) => {
+            const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })
+            return (
+              <Box key={entry.id} marginBottom={1}>
+                <Text color="cyan">{time}</Text>
+                <Text color="yellow"> [{entry.category}]</Text>
+                <Text> {entry.content}</Text>
+              </Box>
+            )
+          })
+        )}
+      </Box>
+
+      {/* 区切り線 */}
+      <Box flexShrink={0}>
+        <Text color="gray">{'─'.repeat(50)}</Text>
+      </Box>
+
+      {/* 入力欄（下部固定） */}
+      <Box flexShrink={0}>
         <Text color="blue">[{selectedCategory}] </Text>
         <TextInput
           value={input}
           onChange={setInput}
+          onSubmit={handleSubmit}
           placeholder="記録を入力..."
         />
       </Box>

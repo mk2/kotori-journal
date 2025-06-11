@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Box, Text } from 'ink'
+import { Box, Text, useInput, useApp } from 'ink'
 import TextInput from 'ink-text-input'
 import { JournalEntry } from '../models/journal'
 import { SearchResults } from '../services/search-service'
@@ -10,9 +10,21 @@ interface SearchViewProps {
 }
 
 export const SearchView: React.FC<SearchViewProps> = ({ onSearch, onClose }) => {
+  const { exit } = useApp()
   const [searchTerm, setSearchTerm] = useState('')
   const [results, setResults] = useState<SearchResults | null>(null)
   const [isSearching, setIsSearching] = useState(false)
+
+  useInput((inputChar: string, key: any) => {
+    if (key.ctrl && (inputChar === 'c' || inputChar === 'd')) {
+      exit()
+      return
+    }
+    if (key.escape) {
+      onClose()
+      return
+    }
+  })
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return
@@ -38,7 +50,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, onClose }) => 
     <Box flexDirection="column">
       <Box marginBottom={1}>
         <Text bold color="cyan">検索モード</Text>
-        <Text dimColor> - Enter で検索 | Esc で戻る</Text>
+        <Text dimColor> - Enter で検索 | Esc で戻る | Ctrl+D で終了</Text>
       </Box>
 
       <Box marginBottom={1}>

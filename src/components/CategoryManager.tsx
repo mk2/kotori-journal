@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Box, Text } from 'ink'
+import { Box, Text, useInput, useApp } from 'ink'
 import TextInput from 'ink-text-input'
 import SelectInput from 'ink-select-input'
 
@@ -16,9 +16,21 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
   onRemoveCategory,
   onClose
 }) => {
+  const { exit } = useApp()
   const [mode, setMode] = useState<'list' | 'add' | 'remove'>('list')
   const [newCategory, setNewCategory] = useState('')
   const [message, setMessage] = useState('')
+
+  useInput((inputChar: string, key: any) => {
+    if (key.ctrl && (inputChar === 'c' || inputChar === 'd')) {
+      exit()
+      return
+    }
+    if (key.escape && mode === 'list') {
+      onClose()
+      return
+    }
+  })
 
   const handleAddCategory = async () => {
     if (!newCategory.trim()) return
@@ -61,6 +73,7 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
     <Box flexDirection="column">
       <Box marginBottom={1}>
         <Text bold color="cyan">カテゴリ管理</Text>
+        <Text dimColor> - Ctrl+D で終了</Text>
       </Box>
 
       {message && (
