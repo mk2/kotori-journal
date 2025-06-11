@@ -15,7 +15,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, onClose }) => 
   const [results, setResults] = useState<SearchResults | null>(null)
   const [isSearching, setIsSearching] = useState(false)
 
-  useInput((inputChar: string, key: any) => {
+  useInput((inputChar: string, key: { ctrl?: boolean; escape?: boolean }) => {
     if (key.ctrl && (inputChar === 'c' || inputChar === 'd')) {
       exit()
       return
@@ -34,6 +34,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, onClose }) => 
       const searchResults = await onSearch(searchTerm)
       setResults(searchResults)
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Search failed:', error)
     } finally {
       setIsSearching(false)

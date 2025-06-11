@@ -21,7 +21,7 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
   const [newCategory, setNewCategory] = useState('')
   const [message, setMessage] = useState('')
 
-  useInput((inputChar: string, key: any) => {
+  useInput((inputChar: string, key: { ctrl?: boolean; escape?: boolean }) => {
     if (key.ctrl && (inputChar === 'c' || inputChar === 'd')) {
       exit()
       return

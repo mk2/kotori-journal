@@ -39,10 +39,13 @@ export const App: React.FC<AppProps> = ({ config }) => {
       setIsReady(true)
     }
 
-    initService().catch(console.error)
+    initService().catch(error => {
+      // eslint-disable-next-line no-console
+      console.error('Failed to initialize service:', error)
+    })
   }, [config.dataPath])
 
-  useInput((inputChar: string, key: any) => {
+  useInput((inputChar: string, key: { ctrl?: boolean; tab?: boolean; escape?: boolean }) => {
     // 終了キー: Ctrl+C または Ctrl+D（全モードで有効）
     if (key.ctrl && (inputChar === 'c' || inputChar === 'd')) {
       exit()
@@ -94,7 +97,8 @@ export const App: React.FC<AppProps> = ({ config }) => {
           setMessage('')
         } catch (aiError) {
           setMessage('AI処理でエラーが発生しました')
-          console.error(aiError)
+          // eslint-disable-next-line no-console
+          console.error('AI processing error:', aiError)
           setTimeout(() => setMessage(''), 3000)
         } finally {
           setIsProcessingAI(false)
@@ -110,7 +114,8 @@ export const App: React.FC<AppProps> = ({ config }) => {
       }
     } catch (error) {
       setMessage('保存に失敗しました')
-      console.error(error)
+      // eslint-disable-next-line no-console
+      console.error('Failed to save entry:', error)
       setTimeout(() => setMessage(''), 3000)
     }
   }

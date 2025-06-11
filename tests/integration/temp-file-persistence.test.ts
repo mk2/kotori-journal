@@ -15,7 +15,7 @@ describe('Temp File Persistence Integration Tests', () => {
   afterEach(async () => {
     try {
       await fs.rm(testDataPath, { recursive: true, force: true })
-    } catch (error) {
+    } catch {
       // エラーは無視
     }
   })
@@ -94,7 +94,9 @@ describe('Temp File Persistence Integration Tests', () => {
       } finally {
         try {
           await fs.rm(isolatedPath, { recursive: true, force: true })
-        } catch {}
+        } catch {
+          // Ignore cleanup errors
+        }
       }
     })
   })
@@ -153,7 +155,9 @@ describe('Temp File Persistence Integration Tests', () => {
         // クリーンアップ
         try {
           await fs.rm(isolatedTestPath, { recursive: true, force: true })
-        } catch {}
+        } catch {
+          // Ignore cleanup errors
+        }
       }
     })
   })

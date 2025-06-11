@@ -31,7 +31,7 @@ describe('AI Conversation History', () => {
   afterEach(async () => {
     try {
       await fs.rm(testDataPath, { recursive: true, force: true })
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
     delete process.env.ANTHROPIC_API_KEY

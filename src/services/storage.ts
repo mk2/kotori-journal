@@ -133,7 +133,7 @@ export class StorageService {
           }
         }
       }
-    } catch (error) {
+    } catch {
       // Directory doesn't exist yet
     }
 

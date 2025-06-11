@@ -23,7 +23,7 @@ export class JournalService {
     // Claude AIサービスは環境変数がある場合のみ初期化
     try {
       this.claudeAI = new ClaudeAIService()
-    } catch (error) {
+    } catch {
       // API キーがない場合は無視（AIなしで動作）
       this.claudeAI = undefined
     }

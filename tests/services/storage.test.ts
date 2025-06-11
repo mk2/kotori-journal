@@ -20,7 +20,7 @@ describe('StorageService', () => {
     // テストディレクトリをクリーンアップ
     try {
       await fs.rm(testDataPath, { recursive: true, force: true })
-    } catch (error) {
+    } catch {
       // エラーは無視
     }
   })

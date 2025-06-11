@@ -21,7 +21,7 @@ describe('Journal Workflow Integration Tests', () => {
     // Clean up test directory
     try {
       await fs.rm(testDataPath, { recursive: true, force: true })
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
   })
@@ -60,7 +60,9 @@ describe('Journal Workflow Integration Tests', () => {
     } finally {
       try {
         await fs.rm(isolatedPath, { recursive: true, force: true })
-      } catch {}
+      } catch {
+        // Ignore cleanup errors
+      }
     }
   })
 
@@ -100,7 +102,9 @@ describe('Journal Workflow Integration Tests', () => {
     } finally {
       try {
         await fs.rm(isolatedPath, { recursive: true, force: true })
-      } catch {}
+      } catch {
+        // Ignore cleanup errors
+      }
     }
   })
 
@@ -144,7 +148,9 @@ describe('Journal Workflow Integration Tests', () => {
     } finally {
       try {
         await fs.rm(isolatedPath, { recursive: true, force: true })
-      } catch {}
+      } catch {
+        // Ignore cleanup errors
+      }
     }
   })
 
@@ -171,7 +177,9 @@ describe('Journal Workflow Integration Tests', () => {
     } finally {
       try {
         await fs.rm(isolatedPath, { recursive: true, force: true })
-      } catch {}
+      } catch {
+        // Ignore cleanup errors
+      }
     }
   })
 })

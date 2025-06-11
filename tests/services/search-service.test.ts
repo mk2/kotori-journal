@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { SearchService } from '../../src/services/search-service'
-import { JournalService } from '../../src/services/journal-service'
 import { JournalEntry } from '../../src/models/journal'
 
 vi.mock('../../src/services/journal-service')

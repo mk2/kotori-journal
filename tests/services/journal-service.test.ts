@@ -17,7 +17,7 @@ describe('JournalService', () => {
   afterEach(async () => {
     try {
       await fs.rm(testDataPath, { recursive: true, force: true })
-    } catch (error) {
+    } catch {
       // エラーは無視
     }
   })
@@ -75,7 +75,9 @@ describe('JournalService', () => {
       } finally {
         try {
           await fs.rm(isolatedPath, { recursive: true, force: true })
-        } catch {}
+        } catch {
+          // Ignore cleanup errors
+        }
       }
     })
 
@@ -121,7 +123,9 @@ describe('JournalService', () => {
       } finally {
         try {
           await fs.rm(isolatedPath, { recursive: true, force: true })
-        } catch {}
+        } catch {
+          // Ignore cleanup errors
+        }
       }
     })
   })
@@ -183,7 +187,9 @@ describe('JournalService', () => {
       } finally {
         try {
           await fs.rm(isolatedPath, { recursive: true, force: true })
-        } catch {}
+        } catch {
+          // Ignore cleanup errors
+        }
       }
     })
   })
