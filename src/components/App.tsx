@@ -27,6 +27,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
   const [mode, setMode] = useState<AppMode>('journal')
   const [categories, setCategories] = useState<string[]>([])
   const [isProcessingAI, setIsProcessingAI] = useState(false)
+  const [loadingDots, setLoadingDots] = useState('')
 
   useEffect(() => {
     const initService = async () => {
@@ -73,6 +74,23 @@ export const App: React.FC<AppProps> = ({ config }) => {
     }
   })
 
+  // ローディングアニメーション用のuseEffect
+  useEffect(() => {
+    if (!isProcessingAI) {
+      setLoadingDots('')
+      return
+    }
+
+    const interval = globalThis.setInterval(() => {
+      setLoadingDots(prev => {
+        if (prev.length >= 3) return ''
+        return prev + '.'
+      })
+    }, 500)
+
+    return () => globalThis.clearInterval(interval)
+  }, [isProcessingAI])
+
   const handleSubmit = async () => {
     if (!journalService || !input.trim()) return
 
@@ -87,14 +105,26 @@ export const App: React.FC<AppProps> = ({ config }) => {
           return
         }
 
-        setIsProcessingAI(true)
+        // ユーザーの質問を即座に表示
+        const questionEntry = await journalService.addEntry(inputText, 'AI', 'ai_question')
+        setEntries(prevEntries => [...prevEntries, questionEntry])
         setInput('')
-        setMessage('AIが応答を生成中...')
+
+        // AI処理開始
+        setIsProcessingAI(true)
+        setMessage('')
 
         try {
-          const { question, response } = await journalService.processAIRequest(inputText)
-          setEntries([...entries, question, response])
-          setMessage('')
+          // 今日のジャーナルエントリーのみを取得（AI会話は除く）
+          const today = new Date()
+          const todayJournalEntries = journalService.getJournalEntriesByDate(today)
+
+          // AI応答を取得
+          const response = await journalService.generateAIResponse(inputText, todayJournalEntries)
+
+          // AI応答を履歴に追加
+          const responseEntry = await journalService.addEntry(response, 'AI', 'ai_response')
+          setEntries(prevEntries => [...prevEntries, responseEntry])
         } catch (aiError) {
           setMessage('AI処理でエラーが発生しました')
           // eslint-disable-next-line no-console
@@ -237,47 +267,63 @@ export const App: React.FC<AppProps> = ({ config }) => {
 
       {/* エントリー表示部分（最新10件、新しいものを下に） */}
       <Box flexDirection="column" flexGrow={1}>
-        {todayEntries.length === 0 ? (
+        {todayEntries.length === 0 && !isProcessingAI ? (
           <Box>
             <Text dimColor>まだ記録がありません。下の入力欄から記録を追加してください。</Text>
           </Box>
         ) : (
-          todayEntries.slice(-10).map(entry => {
-            const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })
+          <>
+            {todayEntries.slice(-10).map(entry => {
+              const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
 
-            // AIエントリーの表示
-            if (entry.type === 'ai_question') {
+              // AIエントリーの表示
+              if (entry.type === 'ai_question') {
+                return (
+                  <Box key={entry.id} marginBottom={1}>
+                    <Text color="cyan">{time}</Text>
+                    <Text color="magenta"> [AI質問]</Text>
+                    <Text> {entry.content}</Text>
+                  </Box>
+                )
+              }
+
+              if (entry.type === 'ai_response') {
+                return (
+                  <Box key={entry.id} marginBottom={1} paddingLeft={2}>
+                    <Text color="cyan">{time}</Text>
+                    <Text color="magenta"> [AI応答]</Text>
+                    <Text color="gray"> {entry.content}</Text>
+                  </Box>
+                )
+              }
+
+              // 通常のエントリー表示
               return (
                 <Box key={entry.id} marginBottom={1}>
                   <Text color="cyan">{time}</Text>
-                  <Text color="magenta"> [AI質問]</Text>
+                  <Text color="yellow"> [{entry.category}]</Text>
                   <Text> {entry.content}</Text>
                 </Box>
               )
-            }
+            })}
 
-            if (entry.type === 'ai_response') {
-              return (
-                <Box key={entry.id} marginBottom={1} paddingLeft={2}>
-                  <Text color="cyan">{time}</Text>
-                  <Text color="magenta"> [AI応答]</Text>
-                  <Text color="gray"> {entry.content}</Text>
-                </Box>
-              )
-            }
-
-            // 通常のエントリー表示
-            return (
-              <Box key={entry.id} marginBottom={1}>
-                <Text color="cyan">{time}</Text>
-                <Text color="yellow"> [{entry.category}]</Text>
-                <Text> {entry.content}</Text>
+            {/* AI処理中のローディングアニメーション */}
+            {isProcessingAI && (
+              <Box marginBottom={1} paddingLeft={2}>
+                <Text color="cyan">
+                  {new Date().toLocaleTimeString('ja-JP', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Text>
+                <Text color="magenta"> [AI応答]</Text>
+                <Text color="gray"> 思考中{loadingDots}</Text>
               </Box>
-            )
-          })
+            )}
+          </>
         )}
       </Box>
 

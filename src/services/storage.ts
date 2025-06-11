@@ -61,6 +61,7 @@ export class StorageService {
         // ファイルが存在しない場合や読み込みエラーの場合は無視
         // (並行実行で削除された可能性があるため)
         if (process.env.NODE_ENV !== 'test') {
+          // eslint-disable-next-line no-console
           console.warn(`Failed to read temp file ${filePath}:`, error)
         }
       }
