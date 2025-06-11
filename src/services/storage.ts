@@ -78,6 +78,25 @@ export class StorageService {
     }
   }
 
+  async clearSpecificTempEntries(entryIds: string[]): Promise<void> {
+    const tempDir = path.join(this.dataPath, '.temp')
+    
+    try {
+      await fs.access(tempDir)
+    } catch {
+      return
+    }
+    
+    for (const entryId of entryIds) {
+      const filePath = path.join(tempDir, `${entryId}.json`)
+      try {
+        await fs.unlink(filePath)
+      } catch {
+        // ファイルが存在しない場合は無視
+      }
+    }
+  }
+
   async searchReports(keyword: string): Promise<SearchResult[]> {
     const results: SearchResult[] = []
     const lowerKeyword = keyword.toLowerCase()

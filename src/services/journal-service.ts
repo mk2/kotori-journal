@@ -24,15 +24,16 @@ export class JournalService {
     
     const tempEntries = await this.storage.loadTempEntries()
     
+    // 一時エントリーをメモリに復元（元のIDとタイムスタンプを保持）
     for (const entry of tempEntries) {
-      this.journal.addEntry(entry.content, entry.category)
+      this.journal.addExistingEntry(entry)
     }
     
+    // 前日の日報生成をチェック（前日のエントリーのみ対象）
     await this.dailyReportService.checkAndGeneratePreviousDayReport()
     
-    if (tempEntries.length > 0) {
-      await this.storage.clearTempEntries()
-    }
+    // 前日のエントリーのみ一時ファイルから削除
+    await this.clearPreviousDayTempEntries(tempEntries)
   }
 
   async addEntry(content: string, category?: string): Promise<JournalEntry> {
@@ -88,5 +89,24 @@ export class JournalService {
 
   isValidCategory(name: string): boolean {
     return this.categoryManager.isValidCategory(name)
+  }
+
+  private async clearPreviousDayTempEntries(tempEntries: JournalEntry[]): Promise<void> {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    // 前日以前のエントリーIDを収集
+    const previousDayEntryIds = tempEntries
+      .filter(entry => {
+        const entryDate = new Date(entry.timestamp)
+        entryDate.setHours(0, 0, 0, 0)
+        return entryDate < today
+      })
+      .map(entry => entry.id)
+    
+    // 前日以前のエントリーのみ一時ファイルから削除
+    if (previousDayEntryIds.length > 0) {
+      await this.storage.clearSpecificTempEntries(previousDayEntryIds)
+    }
   }
 }

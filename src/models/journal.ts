@@ -20,6 +20,13 @@ export class Journal {
     return entry
   }
 
+  addExistingEntry(entry: JournalEntry): void {
+    this.entries.push({
+      ...entry,
+      timestamp: new Date(entry.timestamp)
+    })
+  }
+
   getEntries(): JournalEntry[] {
     return [...this.entries]
   }
