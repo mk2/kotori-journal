@@ -25,7 +25,7 @@ describe('Temp File Persistence Integration Tests', () => {
       // 独立したテスト環境を使用
       const isolatedPath = path.join(os.tmpdir(), `kotori-multi-day-${Date.now()}`)
       await fs.mkdir(isolatedPath, { recursive: true })
-      
+
       try {
         const today = new Date()
         const yesterday = new Date(today)
@@ -37,40 +37,37 @@ describe('Temp File Persistence Integration Tests', () => {
         const tempDir = path.join(isolatedPath, '.temp')
         await fs.mkdir(tempDir, { recursive: true })
 
-      const entries = [
-        {
-          id: 'two-days-ago-1',
-          content: '一昨日のエントリー',
-          category: '仕事',
-          timestamp: twoDaysAgo.toISOString()
-        },
-        {
-          id: 'yesterday-1',
-          content: '昨日のエントリー1',
-          category: '仕事',
-          timestamp: yesterday.toISOString()
-        },
-        {
-          id: 'yesterday-2',
-          content: '昨日のエントリー2',
-          category: 'プライベート',
-          timestamp: yesterday.toISOString()
-        },
-        {
-          id: 'today-1',
-          content: '今日のエントリー',
-          category: '仕事',
-          timestamp: today.toISOString()
-        }
-      ]
+        const entries = [
+          {
+            id: 'two-days-ago-1',
+            content: '一昨日のエントリー',
+            category: '仕事',
+            timestamp: twoDaysAgo.toISOString(),
+          },
+          {
+            id: 'yesterday-1',
+            content: '昨日のエントリー1',
+            category: '仕事',
+            timestamp: yesterday.toISOString(),
+          },
+          {
+            id: 'yesterday-2',
+            content: '昨日のエントリー2',
+            category: 'プライベート',
+            timestamp: yesterday.toISOString(),
+          },
+          {
+            id: 'today-1',
+            content: '今日のエントリー',
+            category: '仕事',
+            timestamp: today.toISOString(),
+          },
+        ]
 
-      // 各エントリーを一時ファイルに保存
-      for (const entry of entries) {
-        await fs.writeFile(
-          path.join(tempDir, `${entry.id}.json`),
-          JSON.stringify(entry, null, 2)
-        )
-      }
+        // 各エントリーを一時ファイルに保存
+        for (const entry of entries) {
+          await fs.writeFile(path.join(tempDir, `${entry.id}.json`), JSON.stringify(entry, null, 2))
+        }
 
         // 初期化実行
         const service = new JournalService(isolatedPath)
@@ -107,23 +104,23 @@ describe('Temp File Persistence Integration Tests', () => {
       // 独立したテストディレクトリを使用
       const isolatedTestPath = path.join(os.tmpdir(), `kotori-isolated-${Date.now()}`)
       await fs.mkdir(isolatedTestPath, { recursive: true })
-      
+
       try {
         // === Day 1: アプリ起動、エントリー追加、終了 ===
         let service = new JournalService(isolatedTestPath)
         await service.initialize()
-        
+
         await service.addEntry('朝の計画', '仕事')
         await service.addEntry('プロジェクト開始', '仕事')
         await service.addEntry('ランチ', 'プライベート')
-        
+
         let entries = service.getEntries()
         expect(entries).toHaveLength(3)
 
         // === アプリ再起動 ===
         service = new JournalService(isolatedTestPath)
         await service.initialize()
-        
+
         // エントリーが復元されることを確認
         entries = service.getEntries()
         expect(entries).toHaveLength(3)
@@ -135,14 +132,14 @@ describe('Temp File Persistence Integration Tests', () => {
         // === さらにエントリー追加 ===
         await service.addEntry('夕方の作業', '仕事')
         await service.addEntry('一日の振り返り', 'プライベート')
-        
+
         entries = service.getEntries()
         expect(entries).toHaveLength(5)
 
         // === 再度アプリ再起動 ===
         service = new JournalService(isolatedTestPath)
         await service.initialize()
-        
+
         // 全エントリーが保持されていることを確認
         entries = service.getEntries()
         expect(entries).toHaveLength(5)
@@ -180,14 +177,14 @@ describe('Temp File Persistence Integration Tests', () => {
         id: 'late-yesterday',
         content: '昨日の深夜作業',
         category: '仕事',
-        timestamp: lateYesterday.toISOString()
+        timestamp: lateYesterday.toISOString(),
       }
 
       const todayEntry = {
         id: 'early-today',
         content: '今日の早朝作業',
         category: '仕事',
-        timestamp: earlyToday.toISOString()
+        timestamp: earlyToday.toISOString(),
       }
 
       await fs.writeFile(
@@ -234,7 +231,7 @@ describe('Temp File Persistence Integration Tests', () => {
 
       expect(todayEntries).toHaveLength(1)
       expect(todayEntries[0].content).toBe('今日の早朝作業')
-      
+
       expect(yesterdayEntries).toHaveLength(1)
       expect(yesterdayEntries[0].content).toBe('昨日の深夜作業')
     })

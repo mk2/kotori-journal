@@ -19,7 +19,7 @@ export class JournalService {
     this.categoryStorage = new CategoryStorage(dataPath)
     this.categoryManager = new CategoryManager()
     this.dailyReportService = new DailyReportService(this, dataPath)
-    
+
     // Claude AIサービスは環境変数がある場合のみ初期化
     try {
       this.claudeAI = new ClaudeAIService()
@@ -31,22 +31,26 @@ export class JournalService {
 
   async initialize(): Promise<void> {
     this.categoryManager = await this.categoryStorage.load()
-    
+
     const tempEntries = await this.storage.loadTempEntries()
-    
+
     // 一時エントリーをメモリに復元（元のIDとタイムスタンプを保持）
     for (const entry of tempEntries) {
       this.journal.addExistingEntry(entry)
     }
-    
+
     // 前日の日報生成をチェック（前日のエントリーのみ対象）
     await this.dailyReportService.checkAndGeneratePreviousDayReport()
-    
+
     // 前日のエントリーのみ一時ファイルから削除
     await this.clearPreviousDayTempEntries(tempEntries)
   }
 
-  async addEntry(content: string, category?: string, type: 'entry' | 'ai_question' | 'ai_response' = 'entry'): Promise<JournalEntry> {
+  async addEntry(
+    content: string,
+    category?: string,
+    type: 'entry' | 'ai_question' | 'ai_response' = 'entry'
+  ): Promise<JournalEntry> {
     const entry = this.journal.addEntry(content, category, type)
     await this.storage.saveEntryToTemp(entry)
     return entry
@@ -114,30 +118,34 @@ export class JournalService {
     return this.claudeAI?.isAITrigger(text) ?? false
   }
 
-  async processAIRequest(text: string): Promise<{question: JournalEntry, response: JournalEntry}> {
+  async processAIRequest(
+    text: string
+  ): Promise<{ question: JournalEntry; response: JournalEntry }> {
     if (!this.claudeAI) {
-      throw new Error('Claude AI is not available. Please set ANTHROPIC_API_KEY environment variable.')
+      throw new Error(
+        'Claude AI is not available. Please set ANTHROPIC_API_KEY environment variable.'
+      )
     }
-    
+
     // AI質問を履歴に追加
     const questionEntry = await this.addEntry(text, 'AI', 'ai_question')
-    
+
     // 今日のジャーナルエントリーのみを取得（AI会話は除く）
     const today = new Date()
     const todayJournalEntries = this.journal.getJournalEntriesByDate(today)
-    
+
     const response = await this.claudeAI.processAIRequest(text, todayJournalEntries)
-    
+
     // AI応答を履歴に追加
     const responseEntry = await this.addEntry(response, 'AI', 'ai_response')
-    
+
     return { question: questionEntry, response: responseEntry }
   }
 
   private async clearPreviousDayTempEntries(tempEntries: JournalEntry[]): Promise<void> {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
+
     // 前日以前のエントリーIDを収集
     const previousDayEntryIds = tempEntries
       .filter(entry => {
@@ -146,7 +154,7 @@ export class JournalService {
         return entryDate < today
       })
       .map(entry => entry.id)
-    
+
     // 前日以前のエントリーのみ一時ファイルから削除
     if (previousDayEntryIds.length > 0) {
       await this.storage.clearSpecificTempEntries(previousDayEntryIds)

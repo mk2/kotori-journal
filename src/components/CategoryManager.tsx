@@ -14,7 +14,7 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
   categories,
   onAddCategory,
   onRemoveCategory,
-  onClose
+  onClose,
 }) => {
   const { exit } = useApp()
   const [mode, setMode] = useState<'list' | 'add' | 'remove'>('list')
@@ -34,7 +34,7 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
 
   const handleAddCategory = async () => {
     if (!newCategory.trim()) return
-    
+
     const success = await onAddCategory(newCategory)
     if (success) {
       setMessage(`カテゴリ「${newCategory}」を追加しました`)
@@ -43,7 +43,7 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
     } else {
       setMessage('カテゴリの追加に失敗しました')
     }
-    
+
     setTimeout(() => setMessage(''), 2000)
   }
 
@@ -55,14 +55,14 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
     } else {
       setMessage('デフォルトカテゴリは削除できません')
     }
-    
+
     setTimeout(() => setMessage(''), 2000)
   }
 
   const menuItems = [
     { label: '新しいカテゴリを追加', value: 'add' },
     { label: 'カテゴリを削除', value: 'remove' },
-    { label: '戻る', value: 'close' }
+    { label: '戻る', value: 'close' },
   ]
 
   const removableCategories = categories
@@ -72,7 +72,9 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
   return (
     <Box flexDirection="column">
       <Box marginBottom={1}>
-        <Text bold color="cyan">カテゴリ管理</Text>
+        <Text bold color="cyan">
+          カテゴリ管理
+        </Text>
         <Text dimColor> - Ctrl+D で終了</Text>
       </Box>
 
@@ -90,7 +92,7 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
       {mode === 'list' && (
         <SelectInput
           items={menuItems}
-          onSelect={(item) => {
+          onSelect={item => {
             if (item.value === 'close') {
               onClose()
             } else {
@@ -114,11 +116,13 @@ export const CategoryManagerView: React.FC<CategoryManagerProps> = ({
 
       {mode === 'remove' && (
         <Box flexDirection="column">
-          <Box marginBottom={1}><Text>削除するカテゴリを選択:</Text></Box>
+          <Box marginBottom={1}>
+            <Text>削除するカテゴリを選択:</Text>
+          </Box>
           {removableCategories.length > 0 ? (
             <SelectInput
               items={[...removableCategories, { label: 'キャンセル', value: 'cancel' }]}
-              onSelect={(item) => {
+              onSelect={item => {
                 if (item.value === 'cancel') {
                   setMode('list')
                 } else {

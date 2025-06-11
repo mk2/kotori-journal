@@ -32,19 +32,19 @@ describe('StorageService', () => {
         id: 'entry-1',
         content: 'エントリー1',
         category: '仕事',
-        timestamp: new Date()
+        timestamp: new Date(),
       }
       const entry2: JournalEntry = {
         id: 'entry-2',
         content: 'エントリー2',
         category: '仕事',
-        timestamp: new Date()
+        timestamp: new Date(),
       }
       const entry3: JournalEntry = {
         id: 'entry-3',
         content: 'エントリー3',
         category: '仕事',
-        timestamp: new Date()
+        timestamp: new Date(),
       }
 
       // 一時ファイルに保存
@@ -66,7 +66,7 @@ describe('StorageService', () => {
         id: 'existing-entry',
         content: 'テスト',
         category: '仕事',
-        timestamp: new Date()
+        timestamp: new Date(),
       }
 
       await storage.saveEntryToTemp(entry)
@@ -82,11 +82,9 @@ describe('StorageService', () => {
     it('should do nothing when temp directory does not exist', async () => {
       // 新しいStorageインスタンスを作成（tempディレクトリなし）
       const newStorage = new StorageService(path.join(testDataPath, 'non-existent'))
-      
+
       // エラーを投げずに正常終了すること
-      await expect(
-        newStorage.clearSpecificTempEntries(['any-id'])
-      ).resolves.not.toThrow()
+      await expect(newStorage.clearSpecificTempEntries(['any-id'])).resolves.not.toThrow()
     })
   })
 
@@ -97,14 +95,14 @@ describe('StorageService', () => {
           id: 'test-1',
           content: '朝のミーティング',
           category: '仕事',
-          timestamp: new Date('2025-01-11T09:00:00')
+          timestamp: new Date('2025-01-11T09:00:00'),
         },
         {
           id: 'test-2',
           content: 'ランチ',
           category: 'プライベート',
-          timestamp: new Date('2025-01-11T12:00:00')
-        }
+          timestamp: new Date('2025-01-11T12:00:00'),
+        },
       ]
 
       // エントリーを保存
@@ -114,7 +112,7 @@ describe('StorageService', () => {
 
       // エントリーを読み込み
       const loadedEntries = await storage.loadTempEntries()
-      
+
       expect(loadedEntries).toHaveLength(2)
       expect(loadedEntries[0].content).toBe('朝のミーティング')
       expect(loadedEntries[1].content).toBe('ランチ')
@@ -128,14 +126,14 @@ describe('StorageService', () => {
           id: '1',
           content: '作業開始',
           category: '仕事',
-          timestamp: new Date('2025-01-11T09:00:00')
+          timestamp: new Date('2025-01-11T09:00:00'),
         },
         {
           id: '2',
           content: '休憩',
           category: 'プライベート',
-          timestamp: new Date('2025-01-11T15:00:00')
-        }
+          timestamp: new Date('2025-01-11T15:00:00'),
+        },
       ]
 
       const reportDate = new Date('2025-01-11')

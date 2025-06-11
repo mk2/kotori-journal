@@ -38,7 +38,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
       setCategories(service.getCategories())
       setIsReady(true)
     }
-    
+
     initService().catch(console.error)
   }, [config.dataPath])
 
@@ -48,22 +48,22 @@ export const App: React.FC<AppProps> = ({ config }) => {
       exit()
       return
     }
-    
+
     // journalモード以外では処理しない
     if (mode !== 'journal') return
-    
+
     if (key.tab && categories.length > 0) {
       const currentIndex = categories.indexOf(selectedCategory)
       const nextIndex = (currentIndex + 1) % categories.length
       setSelectedCategory(categories[nextIndex])
       return
     }
-    
+
     if (key.escape) {
       setMode('menu')
       return
     }
-    
+
     if (inputChar === '/' && !input) {
       setMode('search')
       return
@@ -72,9 +72,9 @@ export const App: React.FC<AppProps> = ({ config }) => {
 
   const handleSubmit = async () => {
     if (!journalService || !input.trim()) return
-    
+
     const inputText = input.trim()
-    
+
     try {
       // AI トリガーをチェック
       if (journalService.isAITrigger(inputText)) {
@@ -83,11 +83,11 @@ export const App: React.FC<AppProps> = ({ config }) => {
           setTimeout(() => setMessage(''), 3000)
           return
         }
-        
+
         setIsProcessingAI(true)
         setInput('')
         setMessage('AIが応答を生成中...')
-        
+
         try {
           const { question, response } = await journalService.processAIRequest(inputText)
           setEntries([...entries, question, response])
@@ -105,7 +105,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
         setEntries([...entries, entry])
         setInput('')
         setMessage('エントリーを保存しました')
-        
+
         setTimeout(() => setMessage(''), 2000)
       }
     } catch (error) {
@@ -137,18 +137,20 @@ export const App: React.FC<AppProps> = ({ config }) => {
     { label: 'ジャーナル入力に戻る', value: 'journal' },
     { label: '検索 (/)', value: 'search' },
     { label: 'カテゴリ管理', value: 'category' },
-    { label: '終了 (Ctrl+D)', value: 'exit' }
+    { label: '終了 (Ctrl+D)', value: 'exit' },
   ]
 
   if (mode === 'menu') {
     return (
       <Box flexDirection="column">
         <Box marginBottom={1}>
-          <Text bold color="cyan">メニュー</Text>
+          <Text bold color="cyan">
+            メニュー
+          </Text>
         </Box>
         <SelectInput
           items={menuItems}
-          onSelect={(item) => {
+          onSelect={item => {
             if (item.value === 'exit') {
               exit()
             } else {
@@ -163,7 +165,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
   if (mode === 'search' && searchService) {
     return (
       <SearchView
-        onSearch={(keyword) => searchService.searchByKeyword(keyword)}
+        onSearch={keyword => searchService.searchByKeyword(keyword)}
         onClose={() => setMode('journal')}
       />
     )
@@ -173,14 +175,14 @@ export const App: React.FC<AppProps> = ({ config }) => {
     return (
       <CategoryManagerView
         categories={categories}
-        onAddCategory={async (name) => {
+        onAddCategory={async name => {
           const result = await journalService.addCategory(name)
           if (result) {
             setCategories(journalService.getCategories())
           }
           return result
         }}
-        onRemoveCategory={async (name) => {
+        onRemoveCategory={async name => {
           const result = await journalService.removeCategory(name)
           if (result) {
             setCategories(journalService.getCategories())
@@ -200,7 +202,10 @@ export const App: React.FC<AppProps> = ({ config }) => {
           <Text bold color="cyan">
             Kotori Journal
           </Text>
-          <Text dimColor> - Enter で送信 | Tab でカテゴリ切替 | Esc でメニュー | / で検索 | Ctrl+D で終了</Text>
+          <Text dimColor>
+            {' '}
+            - Enter で送信 | Tab でカテゴリ切替 | Esc でメニュー | / で検索 | Ctrl+D で終了
+          </Text>
           {journalService?.isAIAvailable() && (
             <Text color="magenta"> | AI利用可能(？質問, 要約して, アドバイスして)</Text>
           )}
@@ -213,12 +218,16 @@ export const App: React.FC<AppProps> = ({ config }) => {
         )}
 
         <Box marginBottom={1}>
-          <Text>今日の記録: {todayEntries.filter(e => !e.type || e.type === 'entry').length}件</Text>
+          <Text>
+            今日の記録: {todayEntries.filter(e => !e.type || e.type === 'entry').length}件
+          </Text>
           {todayEntries.filter(e => e.type === 'ai_question').length > 0 && (
-            <Text color="magenta"> | AI会話: {todayEntries.filter(e => e.type === 'ai_question').length}回</Text>
+            <Text color="magenta">
+              {' '}
+              | AI会話: {todayEntries.filter(e => e.type === 'ai_question').length}回
+            </Text>
           )}
         </Box>
-
       </Box>
 
       {/* エントリー表示部分（最新10件、新しいものを下に） */}
@@ -228,12 +237,12 @@ export const App: React.FC<AppProps> = ({ config }) => {
             <Text dimColor>まだ記録がありません。下の入力欄から記録を追加してください。</Text>
           </Box>
         ) : (
-          todayEntries.slice(-10).map((entry) => {
-            const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
+          todayEntries.slice(-10).map(entry => {
+            const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP', {
+              hour: '2-digit',
+              minute: '2-digit',
             })
-            
+
             // AIエントリーの表示
             if (entry.type === 'ai_question') {
               return (
@@ -244,7 +253,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
                 </Box>
               )
             }
-            
+
             if (entry.type === 'ai_response') {
               return (
                 <Box key={entry.id} marginBottom={1} paddingLeft={2}>
@@ -254,7 +263,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
                 </Box>
               )
             }
-            
+
             // 通常のエントリー表示
             return (
               <Box key={entry.id} marginBottom={1}>
@@ -279,7 +288,13 @@ export const App: React.FC<AppProps> = ({ config }) => {
           value={input}
           onChange={setInput}
           onSubmit={isProcessingAI ? () => {} : handleSubmit}
-          placeholder={isProcessingAI ? "AI処理中..." : journalService?.isAIAvailable() ? "記録を入力... (？で質問, 要約して, アドバイスして)" : "記録を入力..."}
+          placeholder={
+            isProcessingAI
+              ? 'AI処理中...'
+              : journalService?.isAIAvailable()
+                ? '記録を入力... (？で質問, 要約して, アドバイスして)'
+                : '記録を入力...'
+          }
         />
       </Box>
     </Box>

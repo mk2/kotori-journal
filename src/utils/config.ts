@@ -10,12 +10,12 @@ export interface Config {
 export const defaultConfig: Config = {
   dataPath: path.join(os.homedir(), '.kotori-journal-data'),
   defaultCategories: ['仕事', 'プライベート'],
-  aiTrigger: '@ai'
+  aiTrigger: '@ai',
 }
 
 export function getConfig(): Config {
   return {
     ...defaultConfig,
-    dataPath: process.env.KOTORI_DATA_PATH || defaultConfig.dataPath
+    dataPath: process.env.KOTORI_DATA_PATH || defaultConfig.dataPath,
   }
 }

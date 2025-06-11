@@ -7,9 +7,9 @@ vi.mock('@anthropic-ai/sdk', () => {
   return {
     default: vi.fn().mockImplementation(() => ({
       messages: {
-        create: vi.fn()
-      }
-    }))
+        create: vi.fn(),
+      },
+    })),
   }
 })
 
@@ -20,10 +20,10 @@ describe('ClaudeAIService', () => {
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks()
-    
+
     // Mock environment variable
     process.env.ANTHROPIC_API_KEY = 'test-api-key'
-    
+
     claudeAI = new ClaudeAIService()
     mockAnthropic = (claudeAI as any).anthropic
   })
@@ -36,9 +36,11 @@ describe('ClaudeAIService', () => {
     it('should throw error when API key is missing', () => {
       const originalApiKey = process.env.ANTHROPIC_API_KEY
       delete process.env.ANTHROPIC_API_KEY
-      
+
       try {
-        expect(() => new ClaudeAIService()).toThrow('ANTHROPIC_API_KEY environment variable is required')
+        expect(() => new ClaudeAIService()).toThrow(
+          'ANTHROPIC_API_KEY environment variable is required'
+        )
       } finally {
         // Restore the original API key
         if (originalApiKey) {
@@ -76,90 +78,100 @@ describe('ClaudeAIService', () => {
         id: '1',
         content: '朝の会議で新しいプロジェクトについて話し合った',
         category: '仕事',
-        timestamp: new Date('2025-01-11T09:00:00')
+        timestamp: new Date('2025-01-11T09:00:00'),
       },
       {
         id: '2',
         content: 'ランチは友人と美味しいパスタを食べた',
         category: 'プライベート',
-        timestamp: new Date('2025-01-11T12:00:00')
-      }
+        timestamp: new Date('2025-01-11T12:00:00'),
+      },
     ]
 
     beforeEach(() => {
       mockAnthropic.messages.create.mockResolvedValue({
-        content: [{ type: 'text', text: 'AI response here' }]
+        content: [{ type: 'text', text: 'AI response here' }],
       })
     })
 
     it('should process question request', async () => {
       const result = await claudeAI.processAIRequest('？今日はどうでしたか', sampleEntries)
-      
+
       expect(result).toBe('AI response here')
       expect(mockAnthropic.messages.create).toHaveBeenCalledWith({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: expect.stringContaining('以下は今日のジャーナルエントリーです')
-        }]
+        messages: [
+          {
+            role: 'user',
+            content: expect.stringContaining('以下は今日のジャーナルエントリーです'),
+          },
+        ],
       })
     })
 
     it('should process summary request', async () => {
       const result = await claudeAI.processAIRequest('要約して', sampleEntries)
-      
+
       expect(result).toBe('AI response here')
       expect(mockAnthropic.messages.create).toHaveBeenCalledWith({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: expect.stringContaining('以下のジャーナルエントリーを要約してください')
-        }]
+        messages: [
+          {
+            role: 'user',
+            content: expect.stringContaining('以下のジャーナルエントリーを要約してください'),
+          },
+        ],
       })
     })
 
     it('should process advice request', async () => {
       const result = await claudeAI.processAIRequest('アドバイスして', sampleEntries)
-      
+
       expect(result).toBe('AI response here')
       expect(mockAnthropic.messages.create).toHaveBeenCalledWith({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: expect.stringContaining('以下のジャーナルエントリーに基づいてアドバイスをください')
-        }]
+        messages: [
+          {
+            role: 'user',
+            content: expect.stringContaining(
+              '以下のジャーナルエントリーに基づいてアドバイスをください'
+            ),
+          },
+        ],
       })
     })
 
     it('should handle empty entries gracefully', async () => {
       const result = await claudeAI.processAIRequest('？今日はどうでしたか', [])
-      
+
       expect(result).toBe('AI response here')
       expect(mockAnthropic.messages.create).toHaveBeenCalledWith({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: expect.stringContaining('今日はまだジャーナルエントリーがありません')
-        }]
+        messages: [
+          {
+            role: 'user',
+            content: expect.stringContaining('今日はまだジャーナルエントリーがありません'),
+          },
+        ],
       })
     })
 
     it('should handle API errors', async () => {
       mockAnthropic.messages.create.mockRejectedValue(new Error('API Error'))
-      
+
       await expect(
         claudeAI.processAIRequest('？今日はどうでしたか', sampleEntries)
       ).rejects.toThrow('Claude API request failed: API Error')
     })
 
     it('should handle non-trigger text', async () => {
-      await expect(
-        claudeAI.processAIRequest('普通のテキスト', sampleEntries)
-      ).rejects.toThrow('Not an AI trigger')
+      await expect(claudeAI.processAIRequest('普通のテキスト', sampleEntries)).rejects.toThrow(
+        'Not an AI trigger'
+      )
     })
   })
 
@@ -170,18 +182,18 @@ describe('ClaudeAIService', () => {
           id: '1',
           content: 'テストエントリー1',
           category: '仕事',
-          timestamp: new Date('2025-01-11T09:00:00')
+          timestamp: new Date('2025-01-11T09:00:00'),
         },
         {
           id: '2',
           content: 'テストエントリー2',
           category: 'プライベート',
-          timestamp: new Date('2025-01-11T15:00:00')
-        }
+          timestamp: new Date('2025-01-11T15:00:00'),
+        },
       ]
 
       const formatted = (claudeAI as any).formatEntriesForAI(entries)
-      
+
       expect(formatted).toContain('09:00 [仕事] テストエントリー1')
       expect(formatted).toContain('15:00 [プライベート] テストエントリー2')
     })
