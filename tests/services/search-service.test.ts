@@ -13,7 +13,7 @@ describe('SearchService', () => {
     mockJournalService = {
       searchEntries: vi.fn(),
       searchReports: vi.fn(),
-      getEntriesByDate: vi.fn()
+      getEntriesByDate: vi.fn(),
     }
     searchService = new SearchService(mockJournalService)
   })
@@ -21,29 +21,29 @@ describe('SearchService', () => {
   describe('searchByKeyword', () => {
     it('should search both entries and reports', async () => {
       const keyword = 'TypeScript'
-      
+
       const mockEntries: JournalEntry[] = [
         {
           id: '1',
           content: 'TypeScriptの学習を開始',
           category: '学習',
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       ]
-      
+
       const mockReports = [
         {
           date: '2025-01-10',
           content: 'TypeScriptプロジェクト完了',
-          matches: ['TypeScriptプロジェクト完了']
-        }
+          matches: ['TypeScriptプロジェクト完了'],
+        },
       ]
-      
+
       mockJournalService.searchEntries.mockReturnValue(mockEntries)
       mockJournalService.searchReports.mockResolvedValue(mockReports)
-      
+
       const results = await searchService.searchByKeyword(keyword)
-      
+
       expect(results.currentEntries).toEqual(mockEntries)
       expect(results.reports).toEqual(mockReports)
       expect(mockJournalService.searchEntries).toHaveBeenCalledWith(keyword)
@@ -53,9 +53,9 @@ describe('SearchService', () => {
     it('should handle empty results', async () => {
       mockJournalService.searchEntries.mockReturnValue([])
       mockJournalService.searchReports.mockResolvedValue([])
-      
+
       const results = await searchService.searchByKeyword('存在しない')
-      
+
       expect(results.currentEntries).toHaveLength(0)
       expect(results.reports).toHaveLength(0)
     })
@@ -69,14 +69,14 @@ describe('SearchService', () => {
           id: '1',
           content: 'その日のエントリー',
           category: '仕事',
-          timestamp: date
-        }
+          timestamp: date,
+        },
       ]
-      
+
       mockJournalService.getEntriesByDate.mockReturnValue(mockEntries)
-      
+
       const results = searchService.searchByDate(date)
-      
+
       expect(results).toEqual(mockEntries)
       expect(mockJournalService.getEntriesByDate).toHaveBeenCalledWith(date)
     })
@@ -86,41 +86,41 @@ describe('SearchService', () => {
     it('should search entries within date range', () => {
       const startDate = new Date('2025-01-10')
       const endDate = new Date('2025-01-12')
-      
+
       const allEntries: JournalEntry[] = [
         {
           id: '1',
           content: 'Before range',
           category: '仕事',
-          timestamp: new Date('2025-01-09')
+          timestamp: new Date('2025-01-09'),
         },
         {
           id: '2',
           content: 'In range 1',
           category: '仕事',
-          timestamp: new Date('2025-01-10T10:00:00')
+          timestamp: new Date('2025-01-10T10:00:00'),
         },
         {
           id: '3',
           content: 'In range 2',
           category: '仕事',
-          timestamp: new Date('2025-01-11')
+          timestamp: new Date('2025-01-11'),
         },
         {
           id: '4',
           content: 'After range',
           category: '仕事',
-          timestamp: new Date('2025-01-13')
-        }
+          timestamp: new Date('2025-01-13'),
+        },
       ]
-      
+
       mockJournalService.getEntriesByDate
         .mockReturnValueOnce([allEntries[1]]) // Jan 10
         .mockReturnValueOnce([allEntries[2]]) // Jan 11
-        .mockReturnValueOnce([])              // Jan 12
-      
+        .mockReturnValueOnce([]) // Jan 12
+
       const results = searchService.searchByDateRange(startDate, endDate)
-      
+
       expect(results).toHaveLength(2)
       expect(results[0].content).toBe('In range 1')
       expect(results[1].content).toBe('In range 2')
@@ -133,13 +133,13 @@ describe('SearchService', () => {
         id: `${i}`,
         content: `Entry ${i}`,
         category: '仕事',
-        timestamp: new Date(Date.now() - i * 60000) // 1 minute apart
+        timestamp: new Date(Date.now() - i * 60000), // 1 minute apart
       }))
-      
+
       mockJournalService.searchEntries.mockReturnValue(entries)
-      
+
       const results = searchService.getRecentEntries(5)
-      
+
       expect(results).toHaveLength(5)
       expect(results[0].id).toBe('0')
     })

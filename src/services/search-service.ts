@@ -13,10 +13,10 @@ export class SearchService {
   async searchByKeyword(keyword: string): Promise<SearchResults> {
     const currentEntries = this.journalService.searchEntries(keyword)
     const reports = await this.journalService.searchReports(keyword)
-    
+
     return {
       currentEntries,
-      reports
+      reports,
     }
   }
 
@@ -27,13 +27,13 @@ export class SearchService {
   searchByDateRange(startDate: Date, endDate: Date): JournalEntry[] {
     const results: JournalEntry[] = []
     const currentDate = new Date(startDate)
-    
+
     while (currentDate <= endDate) {
       const entries = this.journalService.getEntriesByDate(currentDate)
       results.push(...entries)
       currentDate.setDate(currentDate.getDate() + 1)
     }
-    
+
     return results
   }
 

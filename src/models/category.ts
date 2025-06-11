@@ -13,15 +13,15 @@ export class CategoryManager {
 
   addCategory(name: string): boolean {
     const trimmedName = name.trim()
-    
+
     if (!trimmedName) {
       return false
     }
-    
+
     if (this.categories.has(trimmedName)) {
       return false
     }
-    
+
     this.categories.add(trimmedName)
     return true
   }
@@ -30,7 +30,7 @@ export class CategoryManager {
     if (this.defaultCategories.has(name)) {
       return false
     }
-    
+
     return this.categories.delete(name)
   }
 
@@ -44,13 +44,13 @@ export class CategoryManager {
 
   static fromJSON(data: string[]): CategoryManager {
     const manager = new CategoryManager()
-    
+
     for (const category of data) {
       if (!manager.defaultCategories.has(category)) {
         manager.categories.add(category)
       }
     }
-    
+
     return manager
   }
 }

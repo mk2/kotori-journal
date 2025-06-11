@@ -12,7 +12,7 @@ describe('Journal Workflow Integration Tests', () => {
     // Create temporary test directory
     testDataPath = path.join(os.tmpdir(), `kotori-test-${Date.now()}`)
     await fs.mkdir(testDataPath, { recursive: true })
-    
+
     journalService = new JournalService(testDataPath)
     await journalService.initialize()
   })
@@ -30,15 +30,15 @@ describe('Journal Workflow Integration Tests', () => {
     // 新しい独立したサービスを使用
     const isolatedPath = path.join(os.tmpdir(), `kotori-workflow-${Date.now()}`)
     await fs.mkdir(isolatedPath, { recursive: true })
-    
+
     try {
       const service = new JournalService(isolatedPath)
       await service.initialize()
-      
+
       // Add entries
       const entry1 = await service.addEntry('朝の会議に参加', '仕事')
       const entry2 = await service.addEntry('ランチを食べた', 'プライベート')
-      
+
       expect(entry1.content).toBe('朝の会議に参加')
       expect(entry1.category).toBe('仕事')
       expect(entry2.content).toBe('ランチを食べた')
@@ -68,11 +68,11 @@ describe('Journal Workflow Integration Tests', () => {
     // 独立したテスト環境を使用
     const isolatedPath = path.join(os.tmpdir(), `kotori-categories-${Date.now()}`)
     await fs.mkdir(isolatedPath, { recursive: true })
-    
+
     try {
       const service = new JournalService(isolatedPath)
       await service.initialize()
-      
+
       // Check default categories
       const initialCategories = service.getCategories()
       expect(initialCategories).toContain('仕事')
@@ -82,7 +82,7 @@ describe('Journal Workflow Integration Tests', () => {
       // Add new category
       const addResult = await service.addCategory('学習')
       expect(addResult).toBe(true)
-      
+
       const updatedCategories = service.getCategories()
       expect(updatedCategories).toContain('学習')
 
@@ -108,17 +108,17 @@ describe('Journal Workflow Integration Tests', () => {
     // 独立したテスト環境を使用
     const isolatedPath = path.join(os.tmpdir(), `kotori-report-${Date.now()}`)
     await fs.mkdir(isolatedPath, { recursive: true })
-    
+
     try {
       const service = new JournalService(isolatedPath)
       await service.initialize()
-      
+
       const testDate = new Date('2025-01-11')
-      
+
       // Add entries for the test date
       const entry1 = await service.addEntry('テストエントリー1', '仕事')
       const entry2 = await service.addEntry('テストエントリー2', 'プライベート')
-      
+
       // Manually set timestamps to test date
       entry1.timestamp = testDate
       entry2.timestamp = testDate
@@ -128,7 +128,10 @@ describe('Journal Workflow Integration Tests', () => {
 
       // Check if report file was created
       const reportPath = path.join(isolatedPath, '2025', '01', '11.md')
-      const reportExists = await fs.access(reportPath).then(() => true).catch(() => false)
+      const reportExists = await fs
+        .access(reportPath)
+        .then(() => true)
+        .catch(() => false)
       expect(reportExists).toBe(true)
 
       // Check report content
@@ -149,7 +152,7 @@ describe('Journal Workflow Integration Tests', () => {
     // 独立したテスト環境を使用
     const isolatedPath = path.join(os.tmpdir(), `kotori-recovery-${Date.now()}`)
     await fs.mkdir(isolatedPath, { recursive: true })
-    
+
     try {
       // Add entry (should be saved to temp)
       const service = new JournalService(isolatedPath)

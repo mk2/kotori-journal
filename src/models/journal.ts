@@ -9,15 +9,19 @@ export interface JournalEntry {
 export class Journal {
   private entries: JournalEntry[] = []
 
-  addEntry(content: string, category: string = '未分類', type: 'entry' | 'ai_question' | 'ai_response' = 'entry'): JournalEntry {
+  addEntry(
+    content: string,
+    category: string = '未分類',
+    type: 'entry' | 'ai_question' | 'ai_response' = 'entry'
+  ): JournalEntry {
     const entry: JournalEntry = {
       id: this.generateId(),
       content,
       category,
       timestamp: new Date(),
-      type
+      type,
     }
-    
+
     this.entries.push(entry)
     return entry
   }
@@ -26,7 +30,7 @@ export class Journal {
     this.entries.push({
       ...entry,
       timestamp: new Date(entry.timestamp),
-      type: entry.type || 'entry'
+      type: entry.type || 'entry',
     })
   }
 
@@ -36,7 +40,7 @@ export class Journal {
 
   getEntriesByDate(date: Date): JournalEntry[] {
     const targetDate = this.normalizeDate(date)
-    
+
     return this.entries.filter(entry => {
       const entryDate = this.normalizeDate(entry.timestamp)
       return entryDate.getTime() === targetDate.getTime()
@@ -45,11 +49,10 @@ export class Journal {
 
   getJournalEntriesByDate(date: Date): JournalEntry[] {
     const targetDate = this.normalizeDate(date)
-    
+
     return this.entries.filter(entry => {
       const entryDate = this.normalizeDate(entry.timestamp)
-      return entryDate.getTime() === targetDate.getTime() && 
-             (!entry.type || entry.type === 'entry')
+      return entryDate.getTime() === targetDate.getTime() && (!entry.type || entry.type === 'entry')
     })
   }
 
@@ -59,9 +62,10 @@ export class Journal {
 
   searchEntries(keyword: string): JournalEntry[] {
     const lowerKeyword = keyword.toLowerCase()
-    return this.entries.filter(entry => 
-      entry.content.toLowerCase().includes(lowerKeyword) ||
-      entry.category.toLowerCase().includes(lowerKeyword)
+    return this.entries.filter(
+      entry =>
+        entry.content.toLowerCase().includes(lowerKeyword) ||
+        entry.category.toLowerCase().includes(lowerKeyword)
     )
   }
 

@@ -11,7 +11,7 @@ export class ClaudeAIService {
     }
 
     this.anthropic = new Anthropic({
-      apiKey: apiKey
+      apiKey: apiKey,
     })
   }
 
@@ -21,11 +21,14 @@ export class ClaudeAIService {
   isAITrigger(text: string): boolean {
     const triggers = [
       // 質問トリガー
-      '？', '?',
+      '？',
+      '?',
       // 要約トリガー
-      '要約して', 'まとめて',
+      '要約して',
+      'まとめて',
       // アドバイストリガー
-      'アドバイスして', '助言をください'
+      'アドバイスして',
+      '助言をください',
     ]
 
     return triggers.some(trigger => text.includes(trigger))
@@ -41,21 +44,23 @@ export class ClaudeAIService {
 
     try {
       const prompt = this.buildPrompt(text, entries)
-      
+
       const response = await this.anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: prompt
-        }]
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
       })
 
       const content = response.content[0]
       if (content.type === 'text') {
         return content.text
       }
-      
+
       throw new Error('Unexpected response format')
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -68,7 +73,7 @@ export class ClaudeAIService {
    */
   private buildPrompt(text: string, entries: JournalEntry[]): string {
     const formattedEntries = this.formatEntriesForAI(entries)
-    
+
     if (text.includes('？') || text.includes('?')) {
       // 質問モード
       if (entries.length === 0) {
@@ -82,7 +87,7 @@ ${formattedEntries}
 
 上記のエントリーを参考に、簡潔に回答してください。`
     }
-    
+
     if (text.includes('要約') || text.includes('まとめ')) {
       // 要約モード
       if (entries.length === 0) {
@@ -94,7 +99,7 @@ ${formattedEntries}
 
 重要なポイントを3-5行で簡潔にまとめてください。`
     }
-    
+
     if (text.includes('アドバイス') || text.includes('助言')) {
       // アドバイスモード
       if (entries.length === 0) {
@@ -124,9 +129,9 @@ ${formattedEntries}`
     return entries
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
       .map(entry => {
-        const time = entry.timestamp.toLocaleTimeString('ja-JP', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
+        const time = entry.timestamp.toLocaleTimeString('ja-JP', {
+          hour: '2-digit',
+          minute: '2-digit',
         })
         return `${time} [${entry.category}] ${entry.content}`
       })

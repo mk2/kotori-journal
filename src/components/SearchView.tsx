@@ -28,7 +28,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, onClose }) => 
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return
-    
+
     setIsSearching(true)
     try {
       const searchResults = await onSearch(searchTerm)
@@ -49,7 +49,9 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, onClose }) => 
   return (
     <Box flexDirection="column">
       <Box marginBottom={1}>
-        <Text bold color="cyan">検索モード</Text>
+        <Text bold color="cyan">
+          検索モード
+        </Text>
         <Text dimColor> - Enter で検索 | Esc で戻る | Ctrl+D で終了</Text>
       </Box>
 
@@ -72,15 +74,15 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, onClose }) => 
       {results && !isSearching && (
         <Box flexDirection="column">
           <Box marginBottom={1}>
-            <Text bold>
-              検索結果: {results.currentEntries.length + results.reports.length}件
-            </Text>
+            <Text bold>検索結果: {results.currentEntries.length + results.reports.length}件</Text>
           </Box>
 
           {results.currentEntries.length > 0 && (
             <Box flexDirection="column" marginBottom={1}>
-              <Text bold color="green">現在のエントリー:</Text>
-              {results.currentEntries.map((entry) => (
+              <Text bold color="green">
+                現在のエントリー:
+              </Text>
+              {results.currentEntries.map(entry => (
                 <Text key={entry.id}>{formatEntry(entry)}</Text>
               ))}
             </Box>
@@ -88,12 +90,17 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, onClose }) => 
 
           {results.reports.length > 0 && (
             <Box flexDirection="column">
-              <Text bold color="green">過去の日報:</Text>
+              <Text bold color="green">
+                過去の日報:
+              </Text>
               {results.reports.map((report, index) => (
                 <Box key={index} flexDirection="column" marginBottom={1}>
                   <Text color="blue">{report.date}:</Text>
                   {report.matches.slice(0, 3).map((match, i) => (
-                    <Text key={i} dimColor>  {match}</Text>
+                    <Text key={i} dimColor>
+                      {' '}
+                      {match}
+                    </Text>
                   ))}
                 </Box>
               ))}

@@ -20,21 +20,21 @@ describe('Journal AI Integration', () => {
 
   it('should filter AI conversations from journal entries for reports', () => {
     const today = new Date()
-    
+
     // 通常のエントリーを追加
     journal.addEntry('朝の会議', '仕事')
     journal.addEntry('ランチ', 'プライベート')
-    
+
     // AI会話を追加
     journal.addEntry('？今日はどうでしたか', 'AI', 'ai_question')
     journal.addEntry('今日は充実した一日でした', 'AI', 'ai_response')
-    
+
     const allEntries = journal.getEntriesByDate(today)
     const journalOnlyEntries = journal.getJournalEntriesByDate(today)
-    
+
     expect(allEntries).toHaveLength(4)
     expect(journalOnlyEntries).toHaveLength(2)
-    
+
     // ジャーナル専用エントリーにはAI会話が含まれていないことを確認
     expect(journalOnlyEntries.every(entry => !entry.type || entry.type === 'entry')).toBe(true)
   })
@@ -45,7 +45,7 @@ describe('Journal AI Integration', () => {
     journal.addEntry('プロジェクトは成功しました', 'AI', 'ai_response')
 
     const searchResults = journal.searchEntries('プロジェクト')
-    
+
     // 検索では全てのエントリータイプが対象になる
     expect(searchResults).toHaveLength(3)
   })
