@@ -1,0 +1,287 @@
+import React, { useState, useEffect } from 'react'
+import { Box, Text, useInput, useApp } from 'ink'
+import TextInput from 'ink-text-input'
+import SelectInput from 'ink-select-input'
+import { JournalService } from '../services/journal-service'
+import { SearchService } from '../services/search-service'
+import { Config } from '../utils/config'
+import { JournalEntry } from '../models/journal'
+import { SearchView } from './SearchView'
+import { CategoryManagerView } from './CategoryManager'
+
+interface AppProps {
+  config: Config
+}
+
+type AppMode = 'journal' | 'search' | 'category' | 'menu'
+
+export const App: React.FC<AppProps> = ({ config }) => {
+  const { exit } = useApp()
+  const [input, setInput] = useState('')
+  const [entries, setEntries] = useState<JournalEntry[]>([])
+  const [message, setMessage] = useState('')
+  const [isReady, setIsReady] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState(config.defaultCategories[0])
+  const [journalService, setJournalService] = useState<JournalService | null>(null)
+  const [searchService, setSearchService] = useState<SearchService | null>(null)
+  const [mode, setMode] = useState<AppMode>('journal')
+  const [categories, setCategories] = useState<string[]>([])
+  const [isProcessingAI, setIsProcessingAI] = useState(false)
+
+  useEffect(() => {
+    const initService = async () => {
+      const service = new JournalService(config.dataPath)
+      await service.initialize()
+      setJournalService(service)
+      setSearchService(new SearchService(service))
+      setEntries(service.getEntries())
+      setCategories(service.getCategories())
+      setIsReady(true)
+    }
+    
+    initService().catch(console.error)
+  }, [config.dataPath])
+
+  useInput((inputChar: string, key: any) => {
+    // 終了キー: Ctrl+C または Ctrl+D（全モードで有効）
+    if (key.ctrl && (inputChar === 'c' || inputChar === 'd')) {
+      exit()
+      return
+    }
+    
+    // journalモード以外では処理しない
+    if (mode !== 'journal') return
+    
+    if (key.tab && categories.length > 0) {
+      const currentIndex = categories.indexOf(selectedCategory)
+      const nextIndex = (currentIndex + 1) % categories.length
+      setSelectedCategory(categories[nextIndex])
+      return
+    }
+    
+    if (key.escape) {
+      setMode('menu')
+      return
+    }
+    
+    if (inputChar === '/' && !input) {
+      setMode('search')
+      return
+    }
+  })
+
+  const handleSubmit = async () => {
+    if (!journalService || !input.trim()) return
+    
+    const inputText = input.trim()
+    
+    try {
+      // AI トリガーをチェック
+      if (journalService.isAITrigger(inputText)) {
+        if (!journalService.isAIAvailable()) {
+          setMessage('AI機能が利用できません。ANTHROPIC_API_KEYを設定してください。')
+          setTimeout(() => setMessage(''), 3000)
+          return
+        }
+        
+        setIsProcessingAI(true)
+        setInput('')
+        setMessage('AIが応答を生成中...')
+        
+        try {
+          const { question, response } = await journalService.processAIRequest(inputText)
+          setEntries([...entries, question, response])
+          setMessage('')
+        } catch (aiError) {
+          setMessage('AI処理でエラーが発生しました')
+          console.error(aiError)
+          setTimeout(() => setMessage(''), 3000)
+        } finally {
+          setIsProcessingAI(false)
+        }
+      } else {
+        // 通常のジャーナルエントリー追加
+        const entry = await journalService.addEntry(inputText, selectedCategory)
+        setEntries([...entries, entry])
+        setInput('')
+        setMessage('エントリーを保存しました')
+        
+        setTimeout(() => setMessage(''), 2000)
+      }
+    } catch (error) {
+      setMessage('保存に失敗しました')
+      console.error(error)
+      setTimeout(() => setMessage(''), 3000)
+    }
+  }
+
+  if (!isReady) {
+    return (
+      <Box>
+        <Text>初期化中...</Text>
+      </Box>
+    )
+  }
+
+  const todayEntries = entries.filter(entry => {
+    const today = new Date()
+    const entryDate = new Date(entry.timestamp)
+    return (
+      entryDate.getDate() === today.getDate() &&
+      entryDate.getMonth() === today.getMonth() &&
+      entryDate.getFullYear() === today.getFullYear()
+    )
+  })
+
+  const menuItems = [
+    { label: 'ジャーナル入力に戻る', value: 'journal' },
+    { label: '検索 (/)', value: 'search' },
+    { label: 'カテゴリ管理', value: 'category' },
+    { label: '終了 (Ctrl+D)', value: 'exit' }
+  ]
+
+  if (mode === 'menu') {
+    return (
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text bold color="cyan">メニュー</Text>
+        </Box>
+        <SelectInput
+          items={menuItems}
+          onSelect={(item) => {
+            if (item.value === 'exit') {
+              exit()
+            } else {
+              setMode(item.value as AppMode)
+            }
+          }}
+        />
+      </Box>
+    )
+  }
+
+  if (mode === 'search' && searchService) {
+    return (
+      <SearchView
+        onSearch={(keyword) => searchService.searchByKeyword(keyword)}
+        onClose={() => setMode('journal')}
+      />
+    )
+  }
+
+  if (mode === 'category' && journalService) {
+    return (
+      <CategoryManagerView
+        categories={categories}
+        onAddCategory={async (name) => {
+          const result = await journalService.addCategory(name)
+          if (result) {
+            setCategories(journalService.getCategories())
+          }
+          return result
+        }}
+        onRemoveCategory={async (name) => {
+          const result = await journalService.removeCategory(name)
+          if (result) {
+            setCategories(journalService.getCategories())
+          }
+          return result
+        }}
+        onClose={() => setMode('journal')}
+      />
+    )
+  }
+
+  return (
+    <Box flexDirection="column" height="100%">
+      {/* ヘッダー部分 */}
+      <Box flexDirection="column" flexShrink={0}>
+        <Box marginBottom={1}>
+          <Text bold color="cyan">
+            Kotori Journal
+          </Text>
+          <Text dimColor> - Enter で送信 | Tab でカテゴリ切替 | Esc でメニュー | / で検索 | Ctrl+D で終了</Text>
+          {journalService?.isAIAvailable() && (
+            <Text color="magenta"> | AI利用可能(？質問, 要約して, アドバイスして)</Text>
+          )}
+        </Box>
+
+        {message && (
+          <Box marginBottom={1}>
+            <Text color="green">{message}</Text>
+          </Box>
+        )}
+
+        <Box marginBottom={1}>
+          <Text>今日の記録: {todayEntries.filter(e => !e.type || e.type === 'entry').length}件</Text>
+          {todayEntries.filter(e => e.type === 'ai_question').length > 0 && (
+            <Text color="magenta"> | AI会話: {todayEntries.filter(e => e.type === 'ai_question').length}回</Text>
+          )}
+        </Box>
+
+      </Box>
+
+      {/* エントリー表示部分（最新10件、新しいものを下に） */}
+      <Box flexDirection="column" flexGrow={1}>
+        {todayEntries.length === 0 ? (
+          <Box>
+            <Text dimColor>まだ記録がありません。下の入力欄から記録を追加してください。</Text>
+          </Box>
+        ) : (
+          todayEntries.slice(-10).map((entry) => {
+            const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })
+            
+            // AIエントリーの表示
+            if (entry.type === 'ai_question') {
+              return (
+                <Box key={entry.id} marginBottom={1}>
+                  <Text color="cyan">{time}</Text>
+                  <Text color="magenta"> [AI質問]</Text>
+                  <Text> {entry.content}</Text>
+                </Box>
+              )
+            }
+            
+            if (entry.type === 'ai_response') {
+              return (
+                <Box key={entry.id} marginBottom={1} paddingLeft={2}>
+                  <Text color="cyan">{time}</Text>
+                  <Text color="magenta"> [AI応答]</Text>
+                  <Text color="gray"> {entry.content}</Text>
+                </Box>
+              )
+            }
+            
+            // 通常のエントリー表示
+            return (
+              <Box key={entry.id} marginBottom={1}>
+                <Text color="cyan">{time}</Text>
+                <Text color="yellow"> [{entry.category}]</Text>
+                <Text> {entry.content}</Text>
+              </Box>
+            )
+          })
+        )}
+      </Box>
+
+      {/* 区切り線 */}
+      <Box flexShrink={0}>
+        <Text color="gray">{'─'.repeat(50)}</Text>
+      </Box>
+
+      {/* 入力欄（下部固定） */}
+      <Box flexShrink={0}>
+        <Text color="blue">[{selectedCategory}] </Text>
+        <TextInput
+          value={input}
+          onChange={setInput}
+          onSubmit={isProcessingAI ? () => {} : handleSubmit}
+          placeholder={isProcessingAI ? "AI処理中..." : journalService?.isAIAvailable() ? "記録を入力... (？で質問, 要約して, アドバイスして)" : "記録を入力..."}
+        />
+      </Box>
+    </Box>
+  )
+}
