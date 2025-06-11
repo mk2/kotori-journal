@@ -60,7 +60,9 @@ export class StorageService {
       } catch (error) {
         // ファイルが存在しない場合や読み込みエラーの場合は無視
         // (並行実行で削除された可能性があるため)
-        console.warn(`Failed to read temp file ${filePath}:`, error)
+        if (process.env.NODE_ENV !== 'test') {
+          console.warn(`Failed to read temp file ${filePath}:`, error)
+        }
       }
     }
 

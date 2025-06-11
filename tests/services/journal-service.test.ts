@@ -132,32 +132,45 @@ describe('JournalService', () => {
 
   describe('daily workflow', () => {
     it('should maintain entries throughout the day', async () => {
-      await journalService.initialize()
+      // 独立したテスト環境を使用
+      const isolatedPath = path.join(os.tmpdir(), `kotori-workflow-${Date.now()}`)
+      await fs.mkdir(isolatedPath, { recursive: true })
 
-      // 朝のエントリー
-      const morning = await journalService.addEntry('朝のタスク', '仕事')
-      expect(morning.content).toBe('朝のタスク')
+      try {
+        const service = new JournalService(isolatedPath)
+        await service.initialize()
 
-      // 昼のエントリー
-      await journalService.addEntry('ランチミーティング', '仕事')
+        // 朝のエントリー
+        const morning = await service.addEntry('朝のタスク', '仕事')
+        expect(morning.content).toBe('朝のタスク')
 
-      // 夕方のエントリー
-      await journalService.addEntry('一日の振り返り', 'プライベート')
+        // 昼のエントリー
+        await service.addEntry('ランチミーティング', '仕事')
 
-      // 全エントリーが保持されていることを確認
-      const allEntries = journalService.getEntries()
-      expect(allEntries).toHaveLength(3)
+        // 夕方のエントリー
+        await service.addEntry('一日の振り返り', 'プライベート')
 
-      // 再初期化後も保持されることを確認
-      const newService = new JournalService(testDataPath)
-      await newService.initialize()
+        // 全エントリーが保持されていることを確認
+        const allEntries = service.getEntries()
+        expect(allEntries).toHaveLength(3)
 
-      const restoredEntries = newService.getEntries()
-      expect(restoredEntries).toHaveLength(3)
-      const contents = restoredEntries.map(e => e.content)
-      expect(contents).toContain('朝のタスク')
-      expect(contents).toContain('ランチミーティング')
-      expect(contents).toContain('一日の振り返り')
+        // 再初期化後も保持されることを確認
+        const newService = new JournalService(isolatedPath)
+        await newService.initialize()
+
+        const restoredEntries = newService.getEntries()
+        expect(restoredEntries).toHaveLength(3)
+        const contents = restoredEntries.map(e => e.content)
+        expect(contents).toContain('朝のタスク')
+        expect(contents).toContain('ランチミーティング')
+        expect(contents).toContain('一日の振り返り')
+      } finally {
+        try {
+          await fs.rm(isolatedPath, { recursive: true, force: true })
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
     })
   })
 

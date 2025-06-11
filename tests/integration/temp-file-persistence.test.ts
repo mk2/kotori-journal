@@ -164,80 +164,92 @@ describe('Temp File Persistence Integration Tests', () => {
 
   describe('Cross-day boundary', () => {
     it('should handle day boundary correctly', async () => {
-      // 昨日の深夜のエントリーを設定
-      const lateYesterday = new Date()
-      lateYesterday.setDate(lateYesterday.getDate() - 1)
-      lateYesterday.setHours(23, 59, 59)
+      // 独立したテスト環境を使用
+      const isolatedPath = path.join(os.tmpdir(), `kotori-crossday-${Date.now()}`)
+      await fs.mkdir(isolatedPath, { recursive: true })
 
-      // 今日の早朝のエントリーを設定
-      const earlyToday = new Date()
-      earlyToday.setHours(0, 0, 1)
-
-      // 一時ファイルを手動で作成
-      const tempDir = path.join(testDataPath, '.temp')
-      await fs.mkdir(tempDir, { recursive: true })
-
-      const yesterdayEntry = {
-        id: 'late-yesterday',
-        content: '昨日の深夜作業',
-        category: '仕事',
-        timestamp: lateYesterday.toISOString(),
-      }
-
-      const todayEntry = {
-        id: 'early-today',
-        content: '今日の早朝作業',
-        category: '仕事',
-        timestamp: earlyToday.toISOString(),
-      }
-
-      await fs.writeFile(
-        path.join(tempDir, 'late-yesterday.json'),
-        JSON.stringify(yesterdayEntry, null, 2)
-      )
-      await fs.writeFile(
-        path.join(tempDir, 'early-today.json'),
-        JSON.stringify(todayEntry, null, 2)
-      )
-
-      // 初期化実行
-      const service = new JournalService(testDataPath)
-      await service.initialize()
-
-      // 両方のエントリーがメモリに読み込まれることを確認
-      const allEntries = service.getEntries()
-      expect(allEntries.length).toBeGreaterThanOrEqual(2)
-
-      // 今日のエントリーのみ一時ファイルに残っていることを確認
       try {
-        const tempFiles = await fs.readdir(tempDir)
-        const remainingJsonFiles = tempFiles.filter(f => f.endsWith('.json'))
-        expect(remainingJsonFiles).toHaveLength(1)
-        expect(remainingJsonFiles[0]).toBe('early-today.json')
-      } catch (error: any) {
-        // tempディレクトリが削除されている場合は、過去のエントリーがすべて削除されたことを意味する
-        if (error.code === 'ENOENT') {
-          // このケースでは、今日のエントリーが一時ファイルに残っていないことが期待される動作
-          // （すべての一時ファイルがクリーンアップされた）
-          expect(true).toBe(true) // テストパス
-        } else {
-          throw error
+        // 昨日の深夜のエントリーを設定
+        const lateYesterday = new Date()
+        lateYesterday.setDate(lateYesterday.getDate() - 1)
+        lateYesterday.setHours(23, 59, 59)
+
+        // 今日の早朝のエントリーを設定
+        const earlyToday = new Date()
+        earlyToday.setHours(0, 0, 1)
+
+        // 一時ファイルを手動で作成
+        const tempDir = path.join(isolatedPath, '.temp')
+        await fs.mkdir(tempDir, { recursive: true })
+
+        const yesterdayEntry = {
+          id: 'late-yesterday',
+          content: '昨日の深夜作業',
+          category: '仕事',
+          timestamp: lateYesterday.toISOString(),
+        }
+
+        const todayEntry = {
+          id: 'early-today',
+          content: '今日の早朝作業',
+          category: '仕事',
+          timestamp: earlyToday.toISOString(),
+        }
+
+        await fs.writeFile(
+          path.join(tempDir, 'late-yesterday.json'),
+          JSON.stringify(yesterdayEntry, null, 2)
+        )
+        await fs.writeFile(
+          path.join(tempDir, 'early-today.json'),
+          JSON.stringify(todayEntry, null, 2)
+        )
+
+        // 初期化実行
+        const service = new JournalService(isolatedPath)
+        await service.initialize()
+
+        // 両方のエントリーがメモリに読み込まれることを確認
+        const allEntries = service.getEntries()
+        expect(allEntries.length).toBeGreaterThanOrEqual(2)
+
+        // 今日のエントリーのみ一時ファイルに残っていることを確認
+        try {
+          const tempFiles = await fs.readdir(tempDir)
+          const remainingJsonFiles = tempFiles.filter(f => f.endsWith('.json'))
+          expect(remainingJsonFiles).toHaveLength(1)
+          expect(remainingJsonFiles[0]).toBe('early-today.json')
+        } catch (error: any) {
+          // tempディレクトリが削除されている場合は、過去のエントリーがすべて削除されたことを意味する
+          if (error.code === 'ENOENT') {
+            // このケースでは、今日のエントリーが一時ファイルに残っていないことが期待される動作
+            // （すべての一時ファイルがクリーンアップされた）
+            expect(true).toBe(true) // テストパス
+          } else {
+            throw error
+          }
+        }
+
+        // 日付別取得も正しく動作することを確認
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+
+        const todayEntries = service.getEntriesByDate(today)
+        const yesterdayEntries = service.getEntriesByDate(yesterday)
+
+        expect(todayEntries).toHaveLength(1)
+        expect(todayEntries[0].content).toBe('今日の早朝作業')
+
+        expect(yesterdayEntries).toHaveLength(1)
+        expect(yesterdayEntries[0].content).toBe('昨日の深夜作業')
+      } finally {
+        try {
+          await fs.rm(isolatedPath, { recursive: true, force: true })
+        } catch {
+          // Ignore cleanup errors
         }
       }
-
-      // 日付別取得も正しく動作することを確認
-      const today = new Date()
-      const yesterday = new Date(today)
-      yesterday.setDate(yesterday.getDate() - 1)
-
-      const todayEntries = service.getEntriesByDate(today)
-      const yesterdayEntries = service.getEntriesByDate(yesterday)
-
-      expect(todayEntries).toHaveLength(1)
-      expect(todayEntries[0].content).toBe('今日の早朝作業')
-
-      expect(yesterdayEntries).toHaveLength(1)
-      expect(yesterdayEntries[0].content).toBe('昨日の深夜作業')
     })
   })
 })
