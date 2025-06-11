@@ -26,7 +26,6 @@ export const App: React.FC<AppProps> = ({ config }) => {
   const [searchService, setSearchService] = useState<SearchService | null>(null)
   const [mode, setMode] = useState<AppMode>('journal')
   const [categories, setCategories] = useState<string[]>([])
-  const [aiResponse, setAiResponse] = useState<string>('')
   const [isProcessingAI, setIsProcessingAI] = useState(false)
 
   useEffect(() => {
@@ -90,12 +89,9 @@ export const App: React.FC<AppProps> = ({ config }) => {
         setMessage('AIが応答を生成中...')
         
         try {
-          const response = await journalService.processAIRequest(inputText)
-          setAiResponse(response)
+          const { question, response } = await journalService.processAIRequest(inputText)
+          setEntries([...entries, question, response])
           setMessage('')
-          
-          // AI応答を5秒後に自動クリア
-          setTimeout(() => setAiResponse(''), 10000)
         } catch (aiError) {
           setMessage('AI処理でエラーが発生しました')
           console.error(aiError)
@@ -217,18 +213,12 @@ export const App: React.FC<AppProps> = ({ config }) => {
         )}
 
         <Box marginBottom={1}>
-          <Text>今日の記録: {todayEntries.length}件</Text>
+          <Text>今日の記録: {todayEntries.filter(e => !e.type || e.type === 'entry').length}件</Text>
+          {todayEntries.filter(e => e.type === 'ai_question').length > 0 && (
+            <Text color="magenta"> | AI会話: {todayEntries.filter(e => e.type === 'ai_question').length}回</Text>
+          )}
         </Box>
 
-        {/* AI応答表示 */}
-        {aiResponse && (
-          <Box marginBottom={1} padding={1} borderStyle="round" borderColor="magenta">
-            <Box flexDirection="column">
-              <Text bold color="magenta">AI応答:</Text>
-              <Text>{aiResponse}</Text>
-            </Box>
-          </Box>
-        )}
       </Box>
 
       {/* エントリー表示部分（最新10件、新しいものを下に） */}
@@ -243,6 +233,29 @@ export const App: React.FC<AppProps> = ({ config }) => {
               hour: '2-digit', 
               minute: '2-digit' 
             })
+            
+            // AIエントリーの表示
+            if (entry.type === 'ai_question') {
+              return (
+                <Box key={entry.id} marginBottom={1}>
+                  <Text color="cyan">{time}</Text>
+                  <Text color="magenta"> [AI質問]</Text>
+                  <Text> {entry.content}</Text>
+                </Box>
+              )
+            }
+            
+            if (entry.type === 'ai_response') {
+              return (
+                <Box key={entry.id} marginBottom={1} paddingLeft={2}>
+                  <Text color="cyan">{time}</Text>
+                  <Text color="magenta"> [AI応答]</Text>
+                  <Text color="gray"> {entry.content}</Text>
+                </Box>
+              )
+            }
+            
+            // 通常のエントリー表示
             return (
               <Box key={entry.id} marginBottom={1}>
                 <Text color="cyan">{time}</Text>
@@ -265,9 +278,8 @@ export const App: React.FC<AppProps> = ({ config }) => {
         <TextInput
           value={input}
           onChange={setInput}
-          onSubmit={handleSubmit}
+          onSubmit={isProcessingAI ? () => {} : handleSubmit}
           placeholder={isProcessingAI ? "AI処理中..." : journalService?.isAIAvailable() ? "記録を入力... (？で質問, 要約して, アドバイスして)" : "記録を入力..."}
-          disabled={isProcessingAI}
         />
       </Box>
     </Box>

@@ -3,17 +3,19 @@ export interface JournalEntry {
   content: string
   category: string
   timestamp: Date
+  type?: 'entry' | 'ai_question' | 'ai_response'
 }
 
 export class Journal {
   private entries: JournalEntry[] = []
 
-  addEntry(content: string, category: string = '未分類'): JournalEntry {
+  addEntry(content: string, category: string = '未分類', type: 'entry' | 'ai_question' | 'ai_response' = 'entry'): JournalEntry {
     const entry: JournalEntry = {
       id: this.generateId(),
       content,
       category,
-      timestamp: new Date()
+      timestamp: new Date(),
+      type
     }
     
     this.entries.push(entry)
@@ -23,7 +25,8 @@ export class Journal {
   addExistingEntry(entry: JournalEntry): void {
     this.entries.push({
       ...entry,
-      timestamp: new Date(entry.timestamp)
+      timestamp: new Date(entry.timestamp),
+      type: entry.type || 'entry'
     })
   }
 
@@ -40,6 +43,16 @@ export class Journal {
     })
   }
 
+  getJournalEntriesByDate(date: Date): JournalEntry[] {
+    const targetDate = this.normalizeDate(date)
+    
+    return this.entries.filter(entry => {
+      const entryDate = this.normalizeDate(entry.timestamp)
+      return entryDate.getTime() === targetDate.getTime() && 
+             (!entry.type || entry.type === 'entry')
+    })
+  }
+
   getEntriesByCategory(category: string): JournalEntry[] {
     return this.entries.filter(entry => entry.category === category)
   }
@@ -53,7 +66,7 @@ export class Journal {
   }
 
   private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
   }
 
   private normalizeDate(date: Date): Date {

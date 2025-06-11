@@ -62,6 +62,22 @@ describe('JournalService AI Integration (Real)', () => {
         expect(journalService.isAITrigger('要約して')).toBe(true)
         expect(journalService.isAITrigger('普通のテキスト')).toBe(false)
         
+        // AI会話履歴のテスト
+        await journalService.addEntry('テストエントリー', '仕事')
+        
+        // processAIRequest はモックされているので実際のAPI呼び出しはしない
+        // 代わりに手動でAI会話エントリーを追加してテスト
+        const aiQuestion = await journalService.addEntry('？今日はどうでしたか', 'AI', 'ai_question')
+        const aiResponse = await journalService.addEntry('今日は良い一日でしたね！', 'AI', 'ai_response')
+        
+        const allEntries = journalService.getEntries()
+        expect(allEntries).toHaveLength(3)
+        
+        // エントリータイプが正しく設定されていることを確認
+        expect(allEntries[0].type).toBe('entry') // デフォルトは'entry'
+        expect(allEntries[1].type).toBe('ai_question')
+        expect(allEntries[2].type).toBe('ai_response')
+        
       } finally {
         delete process.env.ANTHROPIC_API_KEY
       }

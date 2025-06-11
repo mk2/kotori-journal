@@ -46,8 +46,8 @@ export class JournalService {
     await this.clearPreviousDayTempEntries(tempEntries)
   }
 
-  async addEntry(content: string, category?: string): Promise<JournalEntry> {
-    const entry = this.journal.addEntry(content, category)
+  async addEntry(content: string, category?: string, type: 'entry' | 'ai_question' | 'ai_response' = 'entry'): Promise<JournalEntry> {
+    const entry = this.journal.addEntry(content, category, type)
     await this.storage.saveEntryToTemp(entry)
     return entry
   }
@@ -58,6 +58,10 @@ export class JournalService {
 
   getEntriesByDate(date: Date): JournalEntry[] {
     return this.journal.getEntriesByDate(date)
+  }
+
+  getJournalEntriesByDate(date: Date): JournalEntry[] {
+    return this.journal.getJournalEntriesByDate(date)
   }
 
   getEntriesByCategory(category: string): JournalEntry[] {
@@ -73,7 +77,7 @@ export class JournalService {
   }
 
   async generateDailyReport(date: Date): Promise<void> {
-    const entries = this.journal.getEntriesByDate(date)
+    const entries = this.journal.getJournalEntriesByDate(date)
     await this.storage.generateDailyReport(date, entries)
   }
 
@@ -110,16 +114,24 @@ export class JournalService {
     return this.claudeAI?.isAITrigger(text) ?? false
   }
 
-  async processAIRequest(text: string): Promise<string> {
+  async processAIRequest(text: string): Promise<{question: JournalEntry, response: JournalEntry}> {
     if (!this.claudeAI) {
       throw new Error('Claude AI is not available. Please set ANTHROPIC_API_KEY environment variable.')
     }
     
-    // 今日のエントリーを取得
-    const today = new Date()
-    const todayEntries = this.journal.getEntriesByDate(today)
+    // AI質問を履歴に追加
+    const questionEntry = await this.addEntry(text, 'AI', 'ai_question')
     
-    return this.claudeAI.processAIRequest(text, todayEntries)
+    // 今日のジャーナルエントリーのみを取得（AI会話は除く）
+    const today = new Date()
+    const todayJournalEntries = this.journal.getJournalEntriesByDate(today)
+    
+    const response = await this.claudeAI.processAIRequest(text, todayJournalEntries)
+    
+    // AI応答を履歴に追加
+    const responseEntry = await this.addEntry(response, 'AI', 'ai_response')
+    
+    return { question: questionEntry, response: responseEntry }
   }
 
   private async clearPreviousDayTempEntries(tempEntries: JournalEntry[]): Promise<void> {
