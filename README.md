@@ -1,6 +1,10 @@
-# Kotori Journal
+<div align="center">
+  <img src="docs/images/icon.png" alt="Kotori Journal Icon" width="200">
+  
+  # Kotori Journal
 
-日々の記録をシンプルに管理し、AIと対話しながら振り返りができるCLIジャーナルアプリケーション
+  プロデューサーさん！毎日を私と一緒に記録しちゃいましょう！
+</div>
 
 ## 概要
 
