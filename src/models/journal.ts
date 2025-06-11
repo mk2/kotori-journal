@@ -27,11 +27,23 @@ export class Journal {
   }
 
   addExistingEntry(entry: JournalEntry): void {
-    this.entries.push({
-      ...entry,
-      timestamp: new Date(entry.timestamp),
-      type: entry.type || 'entry',
-    })
+    // Check if entry with same ID already exists
+    const existingIndex = this.entries.findIndex(e => e.id === entry.id)
+    if (existingIndex !== -1) {
+      // Replace existing entry with the same ID
+      this.entries[existingIndex] = {
+        ...entry,
+        timestamp: new Date(entry.timestamp),
+        type: entry.type || 'entry',
+      }
+    } else {
+      // Add new entry
+      this.entries.push({
+        ...entry,
+        timestamp: new Date(entry.timestamp),
+        type: entry.type || 'entry',
+      })
+    }
   }
 
   getEntries(): JournalEntry[] {
