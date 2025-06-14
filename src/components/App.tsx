@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { Box, Text, useInput, useApp } from 'ink'
-import TextInput from 'ink-text-input'
 import SelectInput from 'ink-select-input'
 import { JournalService } from '../services/journal-service'
 import { SearchService } from '../services/search-service'
@@ -8,6 +7,7 @@ import { Config } from '../utils/config'
 import { JournalEntry } from '../models/journal'
 import { SearchView } from './SearchView'
 import { CategoryManagerView } from './CategoryManager'
+import { MultilineTextInput } from './MultilineTextInput'
 
 interface AppProps {
   config: Config
@@ -239,7 +239,8 @@ export const App: React.FC<AppProps> = ({ config }) => {
           </Text>
           <Text dimColor>
             {' '}
-            - Enter で送信 | Tab でカテゴリ切替 | Esc でメニュー | / で検索 | Ctrl+D で終了
+            - Enter で送信 | Ctrl+J で改行 | Tab でカテゴリ切替 | Esc でメニュー | / で検索 | Ctrl+D
+            で終了
           </Text>
           {journalService?.isAIAvailable() && (
             <Text color="magenta"> | AI利用可能(？質問, 要約して, アドバイスして)</Text>
@@ -335,7 +336,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
       {/* 入力欄（下部固定） */}
       <Box flexShrink={0}>
         <Text color="blue">[{selectedCategory}] </Text>
-        <TextInput
+        <MultilineTextInput
           value={input}
           onChange={setInput}
           onSubmit={isProcessingAI ? () => {} : handleSubmit}
