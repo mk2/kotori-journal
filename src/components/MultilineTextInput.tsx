@@ -174,18 +174,23 @@ export const MultilineTextInput: React.FC<MultilineTextInputProps> = ({
           const cursorChar = displayText[cursorCol] || ' '
           const afterCursor = displayText.slice(cursorCol + 1)
 
+          // Check if this is showing placeholder text
+          const isPlaceholder = !line && lineIndex === 0 && lines.length === 1 && placeholder
+
           return (
             <Box key={lineIndex}>
-              <Text>{beforeCursor}</Text>
-              <Text inverse>{cursorChar}</Text>
-              <Text>{afterCursor}</Text>
+              <Text dimColor={isPlaceholder}>{beforeCursor}</Text>
+              <Text inverse dimColor={isPlaceholder}>
+                {cursorChar}
+              </Text>
+              <Text dimColor={isPlaceholder}>{afterCursor}</Text>
             </Box>
           )
         }
 
         return (
           <Box key={lineIndex}>
-            <Text color={line || lineIndex > 0 ? undefined : 'gray'}>{displayText}</Text>
+            <Text dimColor={!line && lineIndex === 0}>{displayText}</Text>
           </Box>
         )
       })}
