@@ -3,6 +3,14 @@ import { Box, Text, useInput, useApp } from 'ink'
 import SelectInput from 'ink-select-input'
 import { JournalService } from '../services/journal-service'
 import { SearchService } from '../services/search-service'
+import { CommandRegistry } from '../services/command-registry'
+import { PluginManager } from '../services/plugin-manager'
+import {
+  QuestionCommand,
+  SummaryCommand,
+  AdviceCommand,
+  HelpCommand,
+} from '../commands/ai-commands'
 import { Config } from '../utils/config'
 import { JournalEntry } from '../models/journal'
 import { SearchView } from './SearchView'
@@ -24,6 +32,8 @@ export const App: React.FC<AppProps> = ({ config }) => {
   const [selectedCategory, setSelectedCategory] = useState(config.defaultCategories[0])
   const [journalService, setJournalService] = useState<JournalService | null>(null)
   const [searchService, setSearchService] = useState<SearchService | null>(null)
+  const [commandRegistry, setCommandRegistry] = useState<CommandRegistry | null>(null)
+  const [, setPluginManager] = useState<PluginManager | null>(null)
   const [mode, setMode] = useState<AppMode>('journal')
   const [categories, setCategories] = useState<string[]>([])
   const [isProcessingAI, setIsProcessingAI] = useState(false)
@@ -33,8 +43,23 @@ export const App: React.FC<AppProps> = ({ config }) => {
     const initService = async () => {
       const service = new JournalService(config.dataPath)
       await service.initialize()
+
+      const registry = new CommandRegistry()
+      const manager = new PluginManager(config.dataPath, config, registry)
+
+      // 標準AIコマンドを登録
+      registry.register(new QuestionCommand())
+      registry.register(new SummaryCommand())
+      registry.register(new AdviceCommand())
+      registry.register(new HelpCommand())
+
+      // プラグインマネージャーを初期化
+      await manager.initialize()
+
       setJournalService(service)
       setSearchService(new SearchService(service))
+      setCommandRegistry(registry)
+      setPluginManager(manager)
       setEntries(service.getEntries())
       setCategories(service.getCategories())
       setIsReady(true)
@@ -44,7 +69,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
       // eslint-disable-next-line no-console
       console.error('Failed to initialize service:', error)
     })
-  }, [config.dataPath])
+  }, [config])
 
   useInput((inputChar: string, key: { ctrl?: boolean; tab?: boolean; escape?: boolean }) => {
     // 終了キー: Ctrl+C または Ctrl+D（全モードで有効）
@@ -92,13 +117,58 @@ export const App: React.FC<AppProps> = ({ config }) => {
   }, [isProcessingAI])
 
   const handleSubmit = async () => {
-    if (!journalService || !input.trim()) return
+    if (!journalService || !commandRegistry || !input.trim()) return
 
     const inputText = input.trim()
 
     try {
-      // AI トリガーをチェック
-      if (journalService.isAITrigger(inputText)) {
+      // コマンドかどうかをチェック
+      const command = commandRegistry.findCommand(inputText)
+
+      if (command) {
+        // コマンド実行
+        setInput('')
+        setIsProcessingAI(true)
+        setMessage('')
+
+        try {
+          const context = {
+            input: inputText,
+            entries: journalService.getEntries(),
+            services: {
+              journal: journalService,
+              storage: journalService['storage'], // private fieldへのアクセス（型エラー回避のため）
+              search: searchService!,
+            },
+            ui: {
+              setMessage,
+              setEntries,
+              addEntry: (entry: JournalEntry) => setEntries(prev => [...prev, entry]),
+            },
+          }
+
+          const result = await commandRegistry.executeCommand(command, context)
+
+          if (result.type === 'error') {
+            setMessage(result.content)
+            setTimeout(() => setMessage(''), 3000)
+          } else if (result.type === 'display') {
+            setMessage(result.content)
+            setTimeout(() => setMessage(''), 5000)
+          } else {
+            setMessage(result.content)
+            setTimeout(() => setMessage(''), 2000)
+          }
+        } catch (commandError) {
+          setMessage('コマンドの実行に失敗しました')
+          // eslint-disable-next-line no-console
+          console.error('Command execution error:', commandError)
+          setTimeout(() => setMessage(''), 3000)
+        } finally {
+          setIsProcessingAI(false)
+        }
+      } else if (journalService.isAITrigger(inputText)) {
+        // 従来のAIトリガー処理（下位互換性のため）
         if (!journalService.isAIAvailable()) {
           setMessage('AI機能が利用できません。ANTHROPIC_API_KEYを設定してください。')
           setTimeout(() => setMessage(''), 3000)
@@ -239,12 +309,13 @@ export const App: React.FC<AppProps> = ({ config }) => {
           </Text>
           <Text dimColor>
             {' '}
-            - Enter で送信 | Ctrl+J で改行 | Tab でカテゴリ切替 | Esc でメニュー | / で検索 | Ctrl+D
-            で終了
+            - Enter で送信 | Ctrl+J で改行 | Tab でカテゴリ切替 | Esc でメニュー | /
+            で検索・コマンド | Ctrl+D で終了
           </Text>
           {journalService?.isAIAvailable() && (
-            <Text color="magenta"> | AI利用可能(？質問, 要約して, アドバイスして)</Text>
+            <Text color="magenta"> | AI利用可能(/? 質問, /summary, /advice)</Text>
           )}
+          {commandRegistry && <Text color="cyan"> | プラグインシステム利用可能</Text>}
         </Box>
 
         {message && (
@@ -344,8 +415,8 @@ export const App: React.FC<AppProps> = ({ config }) => {
             isProcessingAI
               ? 'AI処理中...'
               : journalService?.isAIAvailable()
-                ? '記録を入力... (？で質問, 要約して, アドバイスして)'
-                : '記録を入力...'
+                ? '記録を入力... (/で始まるコマンド: /?, /summary, /advice, /help)'
+                : '記録を入力... (/で始まるコマンド利用可能)'
           }
         />
       </Box>
