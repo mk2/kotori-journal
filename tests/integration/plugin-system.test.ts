@@ -111,14 +111,12 @@ describe('Plugin System Integration', () => {
           isAIAvailable: () => true,
           getJournalEntriesByDate: () => [],
           generateAIResponse: vi.fn().mockResolvedValue('AI response'),
-          addEntry: vi
-            .fn()
-            .mockResolvedValue({
-              id: '3',
-              content: 'AI response',
-              category: 'AI',
-              timestamp: new Date(),
-            }),
+          addEntry: vi.fn().mockResolvedValue({
+            id: '3',
+            content: 'AI response',
+            category: 'AI',
+            timestamp: new Date(),
+          }),
         } as any,
         storage: {} as any,
         search: {} as any,
