@@ -6,7 +6,7 @@ import {
   AdviceCommand,
   HelpCommand,
 } from '../../src/commands/ai-commands'
-import { Command, CommandContext, CommandResult } from '../../src/models/command'
+import { CommandContext } from '../../src/models/command'
 
 describe('Basic Plugin System Integration', () => {
   let commandRegistry: CommandRegistry
