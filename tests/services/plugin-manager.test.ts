@@ -5,7 +5,6 @@ import { Plugin, PluginSource } from '../../src/models/plugin'
 import { Config } from '../../src/utils/config'
 import * as fs from 'fs/promises'
 import { existsSync } from 'fs'
-import * as path from 'path'
 
 // モックfs
 vi.mock('fs/promises')
@@ -308,8 +307,8 @@ describe('PluginManager', () => {
       it('should allow HTTP and HTTPS', async () => {
         // Mock globalThis.fetch
         const mockFetch = vi.fn().mockResolvedValue({ ok: true })
-        global.fetch = mockFetch
-        global.URL = URL
+        globalThis.fetch = mockFetch
+        globalThis.URL = globalThis.URL || globalThis.URL
 
         await restrictedNetwork.fetch('https://example.com')
         expect(mockFetch).toHaveBeenCalled()

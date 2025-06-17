@@ -184,14 +184,14 @@ describe('PluginSecurityManager', () => {
       const sandboxedRequire = securityManager.createSandboxedRequire()
 
       // Mock the actual require for allowed modules
-      const originalRequire = global.require
-      global.require = vi.fn().mockReturnValue({ mockModule: true })
+      const originalRequire = globalThis.require
+      globalThis.require = vi.fn().mockReturnValue({ mockModule: true })
 
       expect(() => sandboxedRequire('path')).not.toThrow()
       expect(() => sandboxedRequire('util')).not.toThrow()
       expect(() => sandboxedRequire('crypto')).not.toThrow()
 
-      global.require = originalRequire
+      globalThis.require = originalRequire
     })
 
     it('should reject non-whitelisted modules', () => {
@@ -307,8 +307,8 @@ describe('PluginSandbox', () => {
       network = context.network
 
       // Mock global URL and fetch
-      global.URL = URL
-      global.fetch = vi.fn().mockResolvedValue({ ok: true })
+      globalThis.URL = globalThis.URL || globalThis.URL
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: true })
     })
 
     it('should reject non-HTTP protocols', async () => {
@@ -338,7 +338,7 @@ describe('PluginSandbox', () => {
     it('should add security headers', async () => {
       await network.fetch('https://api.github.com/test')
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         'https://api.github.com/test',
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -353,7 +353,7 @@ describe('PluginSandbox', () => {
         headers: { Authorization: 'Bearer token' },
       })
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         'https://api.github.com/test',
         expect.objectContaining({
           headers: expect.objectContaining({

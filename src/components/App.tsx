@@ -93,7 +93,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
       return
     }
 
-    if (inputChar === '/' && !input) {
+    if (key.ctrl && inputChar === 'f' && !input) {
       setMode('search')
       return
     }
@@ -240,7 +240,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
 
   const menuItems = [
     { label: 'ジャーナル入力に戻る', value: 'journal' },
-    { label: '検索 (/)', value: 'search' },
+    { label: '検索 (Ctrl+F)', value: 'search' },
     { label: 'カテゴリ管理', value: 'category' },
     { label: '終了 (Ctrl+D)', value: 'exit' },
   ]
@@ -309,8 +309,8 @@ export const App: React.FC<AppProps> = ({ config }) => {
           </Text>
           <Text dimColor>
             {' '}
-            - Enter で送信 | Ctrl+J で改行 | Tab でカテゴリ切替 | Esc でメニュー | /
-            で検索・コマンド | Ctrl+D で終了
+            - Enter で送信 | Ctrl+J で改行 | Tab でカテゴリ切替 | Esc でメニュー | Ctrl+F で検索 | /
+            でコマンド | Ctrl+D で終了
           </Text>
           {journalService?.isAIAvailable() && (
             <Text color="magenta"> | AI利用可能(/? 質問, /summary, /advice)</Text>
