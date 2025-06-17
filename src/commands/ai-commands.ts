@@ -10,7 +10,18 @@ export class QuestionCommand implements Command {
   }
 
   async execute(context: CommandContext): Promise<CommandResult> {
-    const input = context.input.replace(/^\/([？?]|question|ask)?\s*/, '').trim()
+    // `/? 質問内容` または `/question 質問内容` の形式から質問部分を抽出
+    let input = context.input
+    if (input.startsWith('/?')) {
+      input = input.replace(/^\/\?\s*/, '').trim()
+    } else if (input.startsWith('/question')) {
+      input = input.replace(/^\/question\s+/, '').trim()
+    } else if (input.startsWith('/ask')) {
+      input = input.replace(/^\/ask\s+/, '').trim()
+    } else {
+      // その他の場合（/？など）
+      input = input.replace(/^\/[？?]\s*/, '').trim()
+    }
     if (!input) {
       return {
         type: 'error',
@@ -19,12 +30,20 @@ export class QuestionCommand implements Command {
     }
 
     try {
+      // 質問を履歴に追加
+      const questionEntry = await context.services.journal.addEntry(input, 'AI', 'ai_question')
+      context.ui.addEntry(questionEntry)
+
       // 今日のジャーナルエントリーのみを取得（AI会話は除く）
       const today = new Date()
       const todayJournalEntries = context.services.journal.getJournalEntriesByDate(today)
 
       // AI応答を取得
-      const response = await context.services.journal.generateAIResponse(input, todayJournalEntries)
+      const response = await context.services.journal.generateAIResponse(
+        input,
+        todayJournalEntries,
+        true
+      )
 
       // AI応答を履歴に追加
       const responseEntry = await context.services.journal.addEntry(response, 'AI', 'ai_response')
@@ -70,7 +89,8 @@ export class SummaryCommand implements Command {
       const summaryRequest = '要約して'
       const response = await context.services.journal.generateAIResponse(
         summaryRequest,
-        todayJournalEntries
+        todayJournalEntries,
+        true
       )
 
       // AI応答を履歴に追加
@@ -117,7 +137,8 @@ export class AdviceCommand implements Command {
       const adviceRequest = 'アドバイスして'
       const response = await context.services.journal.generateAIResponse(
         adviceRequest,
-        todayJournalEntries
+        todayJournalEntries,
+        true
       )
 
       // AI応答を履歴に追加

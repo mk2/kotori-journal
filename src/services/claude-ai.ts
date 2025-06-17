@@ -29,6 +29,11 @@ export class ClaudeAIService {
    * AIトリガーかどうかを判定
    */
   isAITrigger(text: string): boolean {
+    // スラッシュで始まる場合はコマンドなので、AIトリガーとして扱わない
+    if (text.startsWith('/')) {
+      return false
+    }
+
     const triggers = [
       // 質問トリガー
       '？',
@@ -112,8 +117,12 @@ export class ClaudeAIService {
   /**
    * AIリクエストを処理
    */
-  async processAIRequest(text: string, entries: JournalEntry[]): Promise<string> {
-    if (!this.isAITrigger(text)) {
+  async processAIRequest(
+    text: string,
+    entries: JournalEntry[],
+    skipTriggerCheck = false
+  ): Promise<string> {
+    if (!skipTriggerCheck && !this.isAITrigger(text)) {
       throw new Error('Not an AI trigger')
     }
 

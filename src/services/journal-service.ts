@@ -143,14 +143,18 @@ export class JournalService {
   }
 
   // UIから直接Claude AIにアクセスするためのメソッド
-  async generateAIResponse(text: string, journalEntries: JournalEntry[]): Promise<string> {
+  async generateAIResponse(
+    text: string,
+    journalEntries: JournalEntry[],
+    skipTriggerCheck = false
+  ): Promise<string> {
     if (!this.claudeAI) {
       throw new Error(
         'Claude AI is not available. Please set ANTHROPIC_API_KEY environment variable.'
       )
     }
 
-    return await this.claudeAI.processAIRequest(text, journalEntries)
+    return await this.claudeAI.processAIRequest(text, journalEntries, skipTriggerCheck)
   }
 
   private async clearPreviousDayTempEntries(tempEntries: JournalEntry[]): Promise<void> {
