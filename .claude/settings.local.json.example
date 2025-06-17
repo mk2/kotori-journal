@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(npm:*)",
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(npx lint-staged:*)",
+      "Bash(npx eslint:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(rg:*)",
+      "mcp__ide__executeCode",
+      "Bash(node:*)"
+    ],
+    "deny": []
+  }
+}
