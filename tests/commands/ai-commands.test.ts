@@ -58,7 +58,7 @@ describe('AI Commands', () => {
     })
 
     it('should return error for empty input', async () => {
-      mockContext.input = '/question'
+      mockContext.input = '/question   ' // 空のスペースのみ
       const result = await command.execute(mockContext)
 
       expect(result.type).toBe('error')
@@ -93,7 +93,8 @@ describe('AI Commands', () => {
       expect(result.content).toBe('AI応答を生成しました')
       expect(mockJournalService.generateAIResponse).toHaveBeenCalledWith(
         '今日はどんな日でしたか？',
-        mockTodayEntries
+        mockTodayEntries,
+        true
       )
       expect(mockContext.ui.addEntry).toHaveBeenCalled()
     })
@@ -168,7 +169,8 @@ describe('AI Commands', () => {
       expect(result.content).toBe('今日のエントリーの要約を生成しました')
       expect(mockJournalService.generateAIResponse).toHaveBeenCalledWith(
         '要約して',
-        mockTodayEntries
+        mockTodayEntries,
+        true
       )
     })
   })
@@ -233,7 +235,8 @@ describe('AI Commands', () => {
       expect(result.content).toBe('アドバイスを生成しました')
       expect(mockJournalService.generateAIResponse).toHaveBeenCalledWith(
         'アドバイスして',
-        mockTodayEntries
+        mockTodayEntries,
+        true
       )
     })
   })
