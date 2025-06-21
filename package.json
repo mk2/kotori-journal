@@ -1,11 +1,42 @@
 {
   "name": "kotori-journal",
   "version": "1.0.0",
+  "description": "A terminal-based journal application with AI-powered analysis and daily report generation",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "bin": {
     "kotori": "./dist/cli.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "docs/images/icon.png"
+  ],
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mk2/kotori-journal.git"
+  },
+  "homepage": "https://github.com/mk2/kotori-journal#readme",
+  "bugs": {
+    "url": "https://github.com/mk2/kotori-journal/issues"
+  },
+  "keywords": [
+    "journal",
+    "diary",
+    "cli",
+    "terminal",
+    "ai",
+    "claude",
+    "productivity",
+    "daily-report",
+    "note-taking"
+  ],
+  "author": "mk2 <mk2@mk2.red>",
+  "license": "ISC",
   "scripts": {
     "dev": "tsx src/cli.tsx",
     "watch": "tsx watch src/cli.tsx",
@@ -18,12 +49,9 @@
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prepublishOnly": "npm run test && npm run build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "lint-staged": {
     "*.{ts,tsx}": [
       "prettier --write"

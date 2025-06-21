@@ -1,0 +1,38 @@
+# Source files
+src/
+tests/
+*.test.*
+*.spec.*
+
+# Development files
+.env*
+.vscode/
+.devcontainer/
+node_modules/
+coverage/
+*.log
+*.tgz
+
+# Config files
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+eslint.config.js
+.prettierrc*
+.husky/
+.lint-staged*
+
+# Build artifacts
+.turbo/
+.cache/
+
+# Documentation (exclude from npm, but keep in repo)
+docs/requirements/
+
+# Plugin examples
+example-plugins/
+
+# Git files
+.git*
+
+# Only include dist, README.md, and icon as specified in package.json files field 
