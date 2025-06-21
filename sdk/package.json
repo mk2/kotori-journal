@@ -1,0 +1,31 @@
+{
+  "name": "@kotori-journal/sdk",
+  "version": "1.0.0",
+  "description": "Type definitions and SDK for Kotori Journal plugins",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "kotori-journal",
+    "plugin",
+    "sdk",
+    "types"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "@types/react": "^19.1.7"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0"
+  }
+}
