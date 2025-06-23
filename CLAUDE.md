@@ -1,7 +1,10 @@
 # Development Rules
-- Node.js / TypeScriptでアプリを作成すること
-- ビルドはviteを使用し、テストはvitestを使用すること
-- コードベースの全体的な品質やメンテナンス性を高めるために、実装はTDDで行い、まずテストを作成してから、実装のコードを書くこと
-- 実装後は必ず、eslint/testが問題ないことを確認すること
-  - npm run lint
+- Create the application in Node.js / TypeScript.
+- Builds should be done using vite and tests should be done using vitest.
+- To improve the overall quality and maintainability of the codebase, implementations should be done in TDD, creating tests first, then writing the code for the implementation.
+  - The implementation should be as simple as possible, and if it is not simple to implement, then look back to see if anything is different. If something is still unclear, ask a human to solve it.
+  - If something is too difficult or simple to implement, or if it is something around the design, do not try to complete it by yourself, but ask for instructions from a human instructor.
+- After implementation, be sure to confirm that eslint/test is OK.
   - npm test
+  - npm run lint
+  - npm run typecheck
