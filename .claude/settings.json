@@ -13,6 +13,6 @@
       "mcp__ide__executeCode",
       "Bash(node:*)"
     ],
-    "deny": []
+    "deny": ["Bash(git:*)"]
   }
 }
