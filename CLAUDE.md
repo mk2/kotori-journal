@@ -5,10 +5,11 @@
   - The implementation should be as simple as possible, and if it is not simple to implement, then look back to see if anything is different. If something is still unclear, ask a human to solve it.
   - If something is too difficult or simple to implement, or if it is something around the design, do not try to complete it by yourself, but ask for instructions from a human instructor.
 - When adding any external libraries, be sure to present the above to the human instructor and ask for confirmation as to why it is necessary, whether it is absolutely necessary to use it, and what problems might arise in the future by including it.
-- After implementation, be sure to confirm that eslint/test is OK.
+- After implementation, be sure to confirm that test/lint/typecheck/format is OK.
   - npm test
   - npm run lint
   - npm run typecheck
+  - npm run format
 - Always create test files in tests directory
 
 # Documenting Rules
