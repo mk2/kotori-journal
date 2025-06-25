@@ -39,6 +39,24 @@ export const App: React.FC<AppProps> = ({ config }) => {
   const [isProcessingAI, setIsProcessingAI] = useState(false)
   const [loadingDots, setLoadingDots] = useState('')
 
+  // 1秒ごとにデータを更新するuseEffect
+  useEffect(() => {
+    if (!journalService) return
+
+    const interval = globalThis.setInterval(async () => {
+      try {
+        const latestEntries = await journalService.refreshEntries()
+        setEntries(latestEntries)
+      } catch (error) {
+        // エラーが発生した場合は現在のエントリーを保持
+        // eslint-disable-next-line no-console
+        console.error('Failed to refresh entries:', error)
+      }
+    }, 1000)
+
+    return () => globalThis.clearInterval(interval)
+  }, [journalService])
+
   useEffect(() => {
     const initService = async () => {
       const service = new JournalService(config.dataPath)

@@ -97,6 +97,22 @@ export class JournalService {
     return this.journal.getEntries()
   }
 
+  async refreshEntries(): Promise<JournalEntry[]> {
+    const tempEntries = await this.storage.loadTempEntries()
+
+    // 現在のエントリーのIDセットを取得
+    const currentIds = new Set(this.journal.getEntries().map(entry => entry.id))
+
+    // 新しいエントリーのみを追加
+    for (const entry of tempEntries) {
+      if (!currentIds.has(entry.id)) {
+        this.journal.addExistingEntry(entry)
+      }
+    }
+
+    return this.journal.getEntries()
+  }
+
   getEntriesByDate(date: Date): JournalEntry[] {
     return this.journal.getEntriesByDate(date)
   }
