@@ -4,6 +4,9 @@ import { CategoryManager } from '../models/category'
 import { CategoryStorage } from './category-storage'
 import { DailyReportService } from './daily-report'
 import { ClaudeAIService } from './claude-ai'
+import { ContentPatternStorage } from './content-pattern-storage.js'
+import { ContentPatternManager } from '../models/content-pattern.js'
+import { ContentProcessor } from './content-processor.js'
 
 export class JournalService {
   private journal: Journal
@@ -12,6 +15,9 @@ export class JournalService {
   private categoryStorage: CategoryStorage
   private dailyReportService: DailyReportService
   private claudeAI?: ClaudeAIService
+  private patternStorage: ContentPatternStorage
+  private patternManager: ContentPatternManager
+  private contentProcessor?: ContentProcessor
 
   constructor(dataPath: string) {
     this.journal = new Journal()
@@ -19,18 +25,32 @@ export class JournalService {
     this.categoryStorage = new CategoryStorage(dataPath)
     this.categoryManager = new CategoryManager()
     this.dailyReportService = new DailyReportService(this, dataPath)
+    this.patternStorage = new ContentPatternStorage(dataPath)
+    this.patternManager = new ContentPatternManager()
 
     // Claude AIサービスは環境変数がある場合のみ初期化
     try {
       this.claudeAI = new ClaudeAIService()
+      // ContentProcessorはClaude AIが利用可能な場合のみ初期化
+      this.contentProcessor = new ContentProcessor(this, this.patternManager, undefined)
     } catch {
       // API キーがない場合は無視（AIなしで動作）
       this.claudeAI = undefined
+      this.contentProcessor = undefined
     }
   }
 
   async initialize(): Promise<void> {
     this.categoryManager = await this.categoryStorage.load()
+
+    // パターンマネージャーを初期化
+    await this.patternStorage.ensureDirectoryExists()
+    this.patternManager = await this.patternStorage.load()
+
+    // ContentProcessorを再初期化（patternManagerが読み込まれた後）
+    if (this.claudeAI) {
+      this.contentProcessor = new ContentProcessor(this, this.patternManager, undefined)
+    }
 
     const tempEntries = await this.storage.loadTempEntries()
 
@@ -49,11 +69,28 @@ export class JournalService {
   async addEntry(
     content: string,
     category?: string,
-    type: 'entry' | 'ai_question' | 'ai_response' = 'entry'
+    type: 'entry' | 'ai_question' | 'ai_response' = 'entry',
+    metadata?: Record<string, unknown>
   ): Promise<JournalEntry> {
-    const entry = this.journal.addEntry(content, category, type)
+    const entry = this.journal.addEntry(content, category, type, metadata)
     await this.storage.saveEntryToTemp(entry)
     return entry
+  }
+
+  async updateEntry(entryId: string, updates: Partial<JournalEntry>): Promise<boolean> {
+    const success = this.journal.updateEntry(entryId, updates)
+    if (success) {
+      // Find the updated entry and save it to temp storage
+      const updatedEntry = this.journal.getEntries().find(e => e.id === entryId)
+      if (updatedEntry) {
+        await this.storage.saveEntryToTemp(updatedEntry)
+      }
+    }
+    return success
+  }
+
+  getEntryById(entryId: string): JournalEntry | undefined {
+    return this.journal.getEntries().find(e => e.id === entryId)
   }
 
   getEntries(): JournalEntry[] {
@@ -155,6 +192,19 @@ export class JournalService {
     }
 
     return await this.claudeAI.processAIRequest(text, journalEntries, skipTriggerCheck)
+  }
+
+  // Content processing methods
+  async savePatterns(): Promise<void> {
+    await this.patternStorage.save(this.patternManager)
+  }
+
+  getPatternManager(): ContentPatternManager {
+    return this.patternManager
+  }
+
+  getContentProcessor(): ContentProcessor | undefined {
+    return this.contentProcessor
   }
 
   private async clearPreviousDayTempEntries(tempEntries: JournalEntry[]): Promise<void> {

@@ -5,6 +5,8 @@ export interface Config {
   dataPath: string
   defaultCategories: string[]
   aiTrigger: string
+  serverPort?: number
+  serverAuthToken?: string
 }
 
 export const defaultConfig: Config = {
@@ -14,8 +16,15 @@ export const defaultConfig: Config = {
 }
 
 export function getConfig(): Config {
+  const serverPort = process.env.KOTORI_SERVER_PORT
+    ? parseInt(process.env.KOTORI_SERVER_PORT, 10)
+    : 8765
+  const serverAuthToken = process.env.KOTORI_SERVER_AUTH_TOKEN
+
   return {
     ...defaultConfig,
     dataPath: process.env.KOTORI_DATA_PATH || defaultConfig.dataPath,
+    serverPort,
+    serverAuthToken,
   }
 }

@@ -4,6 +4,7 @@ export interface JournalEntry {
   category: string
   timestamp: Date
   type?: 'entry' | 'ai_question' | 'ai_response'
+  metadata?: Record<string, unknown>
 }
 
 export class Journal {
@@ -12,7 +13,8 @@ export class Journal {
   addEntry(
     content: string,
     category: string = '未分類',
-    type: 'entry' | 'ai_question' | 'ai_response' = 'entry'
+    type: 'entry' | 'ai_question' | 'ai_response' = 'entry',
+    metadata?: Record<string, unknown>
   ): JournalEntry {
     const entry: JournalEntry = {
       id: this.generateId(),
@@ -20,6 +22,7 @@ export class Journal {
       category,
       timestamp: new Date(),
       type,
+      metadata,
     }
 
     this.entries.push(entry)
@@ -44,6 +47,20 @@ export class Journal {
         type: entry.type || 'entry',
       })
     }
+  }
+
+  updateEntry(entryId: string, updates: Partial<JournalEntry>): boolean {
+    const existingIndex = this.entries.findIndex(e => e.id === entryId)
+    if (existingIndex !== -1) {
+      this.entries[existingIndex] = {
+        ...this.entries[existingIndex],
+        ...updates,
+        id: entryId, // Preserve original ID
+        timestamp: this.entries[existingIndex].timestamp, // Preserve original timestamp unless explicitly updated
+      }
+      return true
+    }
+    return false
   }
 
   getEntries(): JournalEntry[] {

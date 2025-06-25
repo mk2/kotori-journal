@@ -8,7 +8,7 @@ import prettierConfig from 'eslint-config-prettier'
 export default [
   js.configs.recommended,
   {
-    ignores: ['dist/**/*', 'node_modules/**/*'],
+    ignores: ['dist/**/*', 'node_modules/**/*', 'chrome-extension/dist/**/*'],
   },
   {
     files: ['**/*.{ts,tsx}'],
@@ -28,6 +28,9 @@ export default [
         Buffer: 'readonly',
         __dirname: 'readonly',
         __filename: 'readonly',
+        NodeJS: 'readonly',
+        RequestInit: 'readonly',
+        Response: 'readonly',
       },
     },
     plugins: {
@@ -61,9 +64,56 @@ export default [
   },
   {
     files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        chrome: 'readonly',
+        global: 'readonly',
+        document: 'readonly',
+        window: 'readonly',
+        fetch: 'readonly',
+        vi: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+      },
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
+    },
+  },
+  {
+    files: ['chrome-extension/**/*.{js,ts}'],
+    languageOptions: {
+      globals: {
+        chrome: 'readonly',
+        document: 'readonly',
+        window: 'readonly',
+        fetch: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        global: 'readonly',
+        require: 'readonly',
+        __dirname: 'readonly',
+        MutationObserver: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLButtonElement: 'readonly',
+        HTMLFormElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
+        Element: 'readonly',
+        confirm: 'readonly',
+        prompt: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
   prettierConfig,
