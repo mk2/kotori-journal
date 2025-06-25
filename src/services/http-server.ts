@@ -3,6 +3,7 @@ import cors from 'cors'
 import bodyParser from 'body-parser'
 import { Server } from 'http'
 import { JournalService } from './journal-service.js'
+import { FileLogger } from '../utils/file-logger.js'
 
 interface BrowserHistoryEntry {
   url: string
@@ -19,6 +20,7 @@ interface BrowserHistoryEntry {
 interface HTTPServerOptions {
   port?: number
   authToken?: string
+  logger?: FileLogger
 }
 
 export class HTTPServer {
@@ -27,11 +29,13 @@ export class HTTPServer {
   private port: number
   private authToken: string
   private journalService: JournalService
+  private logger?: FileLogger
 
   constructor(journalService: JournalService, options: HTTPServerOptions = {}) {
     this.journalService = journalService
     this.port = options.port ?? 8765
     this.authToken = options.authToken ?? this.generateToken()
+    this.logger = options.logger
     this.app = this.createApp()
   }
 
@@ -95,6 +99,8 @@ export class HTTPServer {
       authenticate,
       async (req: Request, res: Response): Promise<void> => {
         try {
+          await this.logger?.info('Received browser history request', req.body)
+
           const entry = req.body as BrowserHistoryEntry
 
           // Validate required fields
@@ -104,12 +110,22 @@ export class HTTPServer {
             !entry.visitedAt ||
             typeof entry.duration !== 'number'
           ) {
+            await this.logger?.error('Validation failed - missing required fields', {
+              hasUrl: !!entry.url,
+              hasTitle: !!entry.title,
+              hasVisitedAt: !!entry.visitedAt,
+              hasDuration: typeof entry.duration === 'number',
+            })
             res.status(400).json({ error: 'Missing required fields' })
             return
           }
 
           // Validate field lengths
           if (entry.title.length > 1000 || entry.url.length > 2000) {
+            await this.logger?.error('Validation failed - field too long', {
+              titleLength: entry.title.length,
+              urlLength: entry.url.length,
+            })
             res.status(400).json({ error: 'Field too long' })
             return
           }
@@ -117,6 +133,8 @@ export class HTTPServer {
           // Create journal entry content
           const displayTitle = entry.ogp?.title || entry.title
           const content = `Visited: ${displayTitle} (URL: ${entry.url}, Duration: ${entry.duration}s)`
+
+          await this.logger?.info('Creating journal entry', { content, category: 'Web閲覧' })
 
           // Add metadata
           const metadata: Record<string, unknown> = {
@@ -136,6 +154,12 @@ export class HTTPServer {
             metadata
           )
 
+          await this.logger?.info('Journal entry created', {
+            id: journalEntry.id,
+            content: journalEntry.content,
+            timestamp: journalEntry.timestamp,
+          })
+
           res.status(201).json({
             success: true,
             entry: {
@@ -144,8 +168,9 @@ export class HTTPServer {
             },
           })
         } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Error processing browser history:', error)
+          await this.logger?.error('Error processing browser history', {
+            error: error instanceof Error ? error.message : error,
+          })
           res.status(500).json({ error: 'Internal server error' })
         }
       }
@@ -172,6 +197,8 @@ export class HTTPServer {
             this.port = addr.port
           }
         }
+        this.logger?.info(`HTTP server started on port ${this.port}`)
+        this.logger?.info(`Auth token: ${this.authToken}`)
         // eslint-disable-next-line no-console
         console.log(`HTTP server started on port ${this.port}`)
         // eslint-disable-next-line no-console
@@ -189,6 +216,7 @@ export class HTTPServer {
     return new Promise(resolve => {
       this.server!.close(() => {
         this.server = null
+        this.logger?.info('HTTP server stopped')
         // eslint-disable-next-line no-console
         console.log('HTTP server stopped')
         resolve()
