@@ -15,7 +15,7 @@ export default [
       globals: {
         // Chrome extension globals
         chrome: 'readonly',
-        
+
         // Browser globals
         console: 'readonly',
         fetch: 'readonly',
@@ -23,7 +23,7 @@ export default [
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
-        
+
         // DOM globals (for content scripts and popup)
         document: 'readonly',
         window: 'readonly',
@@ -32,23 +32,23 @@ export default [
         HTMLInputElement: 'readonly',
         HTMLButtonElement: 'readonly',
         Event: 'readonly',
-        
+
         // Node.js globals (for build scripts)
         require: 'readonly',
         __dirname: 'readonly',
         module: 'readonly',
         exports: 'readonly',
         Buffer: 'readonly',
-        
+
         // Additional DOM types
         Element: 'readonly',
         HTMLFormElement: 'readonly',
         HTMLTextAreaElement: 'readonly',
-        
+
         // Browser APIs
         confirm: 'readonly',
         prompt: 'readonly',
-        
+
         // Test globals
         global: 'readonly',
       },
@@ -63,11 +63,14 @@ export default [
       // Allow any type in tests
       '@typescript-eslint/no-explicit-any': 'off',
       // Allow unused vars starting with underscore
-      '@typescript-eslint/no-unused-vars': ['error', { 
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_',
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
     },
   },
   {

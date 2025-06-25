@@ -1,444 +1,467 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>コンテンツ処理パターン管理</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-    
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 14px;
-      line-height: 1.5;
-      background: #f5f5f5;
-      min-height: 100vh;
-    }
-    
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
-    
-    .header {
-      background: #2196F3;
-      color: white;
-      padding: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .header h1 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 600;
-    }
-    
-    .header-actions {
-      display: flex;
-      gap: 12px;
-    }
-    
-    .btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.2s;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    
-    .btn-primary {
-      background: white;
-      color: #2196F3;
-    }
-    
-    .btn-primary:hover {
-      background: #f0f0f0;
-    }
-    
-    .btn-secondary {
-      background: transparent;
-      color: white;
-      border: 1px solid white;
-    }
-    
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .btn-success {
-      background: #4CAF50;
-      color: white;
-    }
-    
-    .btn-success:hover {
-      background: #45a049;
-    }
-    
-    .btn-danger {
-      background: #f44336;
-      color: white;
-    }
-    
-    .btn-danger:hover {
-      background: #da190b;
-    }
-    
-    .btn-small {
-      padding: 4px 8px;
-      font-size: 12px;
-    }
-    
-    .content {
-      padding: 20px;
-    }
-    
-    .status {
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    
-    .status.success {
-      background: #e8f5e8;
-      color: #2e7d32;
-      border: 1px solid #c8e6c9;
-    }
-    
-    .status.error {
-      background: #fde8e8;
-      color: #c62828;
-      border: 1px solid #ffcdd2;
-    }
-    
-    .status.hidden {
-      display: none;
-    }
-    
-    .patterns-list {
-      margin-bottom: 20px;
-    }
-    
-    .pattern-item {
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
-      margin-bottom: 12px;
-      overflow: hidden;
-    }
-    
-    .pattern-header {
-      padding: 16px;
-      background: #fafafa;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .pattern-info {
-      flex: 1;
-    }
-    
-    .pattern-name {
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 4px;
-    }
-    
-    .pattern-url {
-      color: #666;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      background: #f0f0f0;
-      padding: 2px 6px;
-      border-radius: 3px;
-      display: inline-block;
-    }
-    
-    .pattern-actions {
-      display: flex;
-      gap: 8px;
-    }
-    
-    .pattern-status {
-      margin-left: 12px;
-    }
-    
-    .status-badge {
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 500;
-    }
-    
-    .status-badge.enabled {
-      background: #e8f5e8;
-      color: #2e7d32;
-    }
-    
-    .status-badge.disabled {
-      background: #fafafa;
-      color: #666;
-    }
-    
-    .pattern-details {
-      padding: 16px;
-      border-top: 1px solid #e0e0e0;
-      background: white;
-      display: none;
-    }
-    
-    .pattern-details.expanded {
-      display: block;
-    }
-    
-    .pattern-prompt {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 4px;
-      border-left: 4px solid #2196F3;
-      font-family: 'Courier New', monospace;
-      font-size: 13px;
-      line-height: 1.4;
-      white-space: pre-wrap;
-      margin-bottom: 12px;
-    }
-    
-    .pattern-meta {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      font-size: 12px;
-      color: #666;
-    }
-    
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-    }
-    
-    .empty-state-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-      color: #ccc;
-    }
-    
-    /* Modal styles */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
-    }
-    
-    .modal.show {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .modal-content {
-      background: white;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .modal-header {
-      padding: 20px;
-      border-bottom: 1px solid #e0e0e0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .modal-title {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
-    
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #666;
-      padding: 0;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .modal-body {
-      padding: 20px;
-    }
-    
-    .form-group {
-      margin-bottom: 16px;
-    }
-    
-    .form-label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 500;
-      color: #333;
-    }
-    
-    .form-input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    
-    .form-input:focus {
-      outline: none;
-      border-color: #2196F3;
-      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
-    }
-    
-    .form-textarea {
-      resize: vertical;
-      min-height: 120px;
-      font-family: 'Courier New', monospace;
-    }
-    
-    .form-help {
-      margin-top: 4px;
-      font-size: 12px;
-      color: #666;
-    }
-    
-    .form-checkbox {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .form-checkbox input {
-      width: auto;
-    }
-    
-    .modal-footer {
-      padding: 20px;
-      border-top: 1px solid #e0e0e0;
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-    }
-    
-    .loading {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>コンテンツ処理パターン管理</h1>
-      <div class="header-actions">
-        <button id="close-button" class="btn btn-secondary">閉じる</button>
-        <button id="create-button" class="btn btn-primary">+ 新規パターン</button>
-      </div>
-    </div>
-    
-    <div class="content">
-      <div id="status" class="status hidden"></div>
-      
-      <div id="patterns-container">
-        <div id="loading" class="empty-state">
-          <div class="empty-state-icon">⏳</div>
-          <p>パターンを読み込み中...</p>
-        </div>
-        
-        <div id="patterns-list" class="patterns-list" style="display: none;"></div>
-        
-        <div id="empty-state" class="empty-state" style="display: none;">
-          <div class="empty-state-icon">📝</div>
-          <h3>パターンが登録されていません</h3>
-          <p>新規パターンを作成するか、プリセットパターンを使用して自動コンテンツ処理を開始しましょう</p>
-          <div style="display: flex; gap: 12px; justify-content: center; margin-top: 16px;">
-            <button id="empty-create-button" class="btn btn-primary">新規作成</button>
-            <button id="empty-presets-button" class="btn btn-secondary">プリセット使用</button>
-          </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>コンテンツ処理パターン管理</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        background: #f5f5f5;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: #2196f3;
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .btn-primary {
+        background: white;
+        color: #2196f3;
+      }
+
+      .btn-primary:hover {
+        background: #f0f0f0;
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: white;
+        border: 1px solid white;
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-success {
+        background: #4caf50;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background: #45a049;
+      }
+
+      .btn-danger {
+        background: #f44336;
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background: #da190b;
+      }
+
+      .btn-small {
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      .status {
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .status.success {
+        background: #e8f5e8;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+      }
+
+      .status.error {
+        background: #fde8e8;
+        color: #c62828;
+        border: 1px solid #ffcdd2;
+      }
+
+      .status.hidden {
+        display: none;
+      }
+
+      .patterns-list {
+        margin-bottom: 20px;
+      }
+
+      .pattern-item {
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        overflow: hidden;
+      }
+
+      .pattern-header {
+        padding: 16px;
+        background: #fafafa;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .pattern-info {
+        flex: 1;
+      }
+
+      .pattern-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 4px;
+      }
+
+      .pattern-url {
+        color: #666;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        background: #f0f0f0;
+        padding: 2px 6px;
+        border-radius: 3px;
+        display: inline-block;
+      }
+
+      .pattern-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .pattern-status {
+        margin-left: 12px;
+      }
+
+      .status-badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+
+      .status-badge.enabled {
+        background: #e8f5e8;
+        color: #2e7d32;
+      }
+
+      .status-badge.disabled {
+        background: #fafafa;
+        color: #666;
+      }
+
+      .pattern-details {
+        padding: 16px;
+        border-top: 1px solid #e0e0e0;
+        background: white;
+        display: none;
+      }
+
+      .pattern-details.expanded {
+        display: block;
+      }
+
+      .pattern-prompt {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 4px;
+        border-left: 4px solid #2196f3;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        margin-bottom: 12px;
+      }
+
+      .pattern-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        font-size: 12px;
+        color: #666;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+
+      .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        color: #ccc;
+      }
+
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+      }
+
+      .modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-body {
+        padding: 20px;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #2196f3;
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+      }
+
+      .form-textarea {
+        resize: vertical;
+        min-height: 120px;
+        font-family: 'Courier New', monospace;
+      }
+
+      .form-help {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #666;
+      }
+
+      .form-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .form-checkbox input {
+        width: auto;
+      }
+
+      .modal-footer {
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      .loading {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>コンテンツ処理パターン管理</h1>
+        <div class="header-actions">
+          <button id="close-button" class="btn btn-secondary">閉じる</button>
+          <button id="create-button" class="btn btn-primary">+ 新規パターン</button>
         </div>
       </div>
-    </div>
-  </div>
-  
-  <!-- Create/Edit Modal -->
-  <div id="pattern-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modal-title" class="modal-title">新規パターン作成</h2>
-        <button id="modal-close-button" class="modal-close">&times;</button>
-      </div>
-      
-      <div class="modal-body">
-        <form id="pattern-form">
-          <div class="form-group">
-            <label class="form-label" for="pattern-name">パターン名 *</label>
-            <input type="text" id="pattern-name" class="form-input" placeholder="例: ニュース記事要約" required>
-            <div class="form-help">このパターンを識別するためのわかりやすい名前</div>
+
+      <div class="content">
+        <div id="status" class="status hidden"></div>
+
+        <div id="patterns-container">
+          <div id="loading" class="empty-state">
+            <div class="empty-state-icon">⏳</div>
+            <p>パターンを読み込み中...</p>
           </div>
-          
-          <div class="form-group">
-            <label class="form-label" for="pattern-url">URLパターン *</label>
-            <input type="text" id="pattern-url" class="form-input" placeholder="例: https://.*\.example\.com/news/.*" required>
-            <div class="form-help">正規表現でURLパターンを指定します（例: https://.*\.com/article/.*）</div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label" for="pattern-prompt">処理プロンプト *</label>
-            <textarea id="pattern-prompt" class="form-input form-textarea" placeholder="例: このニュース記事の要点を3つの箇条書きで要約してください：&#10;&#10;{content}" required></textarea>
-            <div class="form-help">
-              利用可能な変数: {content} (ページ内容), {title} (ページタイトル), {url} (ページURL)
+
+          <div id="patterns-list" class="patterns-list" style="display: none"></div>
+
+          <div id="empty-state" class="empty-state" style="display: none">
+            <div class="empty-state-icon">📝</div>
+            <h3>パターンが登録されていません</h3>
+            <p>
+              新規パターンを作成するか、プリセットパターンを使用して自動コンテンツ処理を開始しましょう
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 16px">
+              <button id="empty-create-button" class="btn btn-primary">新規作成</button>
+              <button id="empty-presets-button" class="btn btn-secondary">プリセット使用</button>
             </div>
           </div>
-          
-          <div class="form-group">
-            <label class="form-checkbox">
-              <input type="checkbox" id="pattern-enabled" checked>
-              <span>このパターンを有効にする</span>
-            </label>
-          </div>
-        </form>
-      </div>
-      
-      <div class="modal-footer">
-        <button id="modal-cancel-button" type="button" class="btn btn-secondary">キャンセル</button>
-        <button id="modal-save-button" type="button" class="btn btn-success">保存</button>
+        </div>
       </div>
     </div>
-  </div>
-  
-  <script type="module" src="patterns.js"></script>
-</body>
+
+    <!-- Create/Edit Modal -->
+    <div id="pattern-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title" class="modal-title">新規パターン作成</h2>
+          <button id="modal-close-button" class="modal-close">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <form id="pattern-form">
+            <div class="form-group">
+              <label class="form-label" for="pattern-name">パターン名 *</label>
+              <input
+                type="text"
+                id="pattern-name"
+                class="form-input"
+                placeholder="例: ニュース記事要約"
+                required
+              />
+              <div class="form-help">このパターンを識別するためのわかりやすい名前</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="pattern-url">URLパターン *</label>
+              <input
+                type="text"
+                id="pattern-url"
+                class="form-input"
+                placeholder="例: https://.*\.example\.com/news/.*"
+                required
+              />
+              <div class="form-help">
+                正規表現でURLパターンを指定します（例: https://.*\.com/article/.*）
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="pattern-prompt">処理プロンプト *</label>
+              <textarea
+                id="pattern-prompt"
+                class="form-input form-textarea"
+                placeholder="例: このニュース記事の要点を3つの箇条書きで要約してください：&#10;&#10;{content}"
+                required
+              ></textarea>
+              <div class="form-help">
+                利用可能な変数: {content} (ページ内容), {title} (ページタイトル), {url} (ページURL)
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-checkbox">
+                <input type="checkbox" id="pattern-enabled" checked />
+                <span>このパターンを有効にする</span>
+              </label>
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-footer">
+          <button id="modal-cancel-button" type="button" class="btn btn-secondary">
+            キャンセル
+          </button>
+          <button id="modal-save-button" type="button" class="btn btn-success">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="patterns.js"></script>
+  </body>
 </html>
