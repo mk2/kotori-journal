@@ -3,6 +3,7 @@ interface ExtensionStatus {
     serverUrl: string
     authToken: string
     enabled: boolean
+    autoProcessingEnabled: boolean
   }
   activeVisits: number
 }
@@ -13,6 +14,7 @@ class PopupController {
     serverUrl: HTMLInputElement
     authToken: HTMLInputElement
     enabled: HTMLInputElement
+    autoProcessingEnabled: HTMLInputElement
     testConnection: HTMLButtonElement
     saveSettings: HTMLButtonElement
     activeVisits: HTMLElement
@@ -24,6 +26,7 @@ class PopupController {
       serverUrl: document.getElementById('serverUrl')! as HTMLInputElement,
       authToken: document.getElementById('authToken')! as HTMLInputElement,
       enabled: document.getElementById('enabled')! as HTMLInputElement,
+      autoProcessingEnabled: document.getElementById('autoProcessingEnabled')! as HTMLInputElement,
       testConnection: document.getElementById('testConnection')! as HTMLButtonElement,
       saveSettings: document.getElementById('saveSettings')! as HTMLButtonElement,
       activeVisits: document.getElementById('activeVisits')!,
@@ -52,6 +55,7 @@ class PopupController {
     this.elements.serverUrl.value = status.config.serverUrl
     this.elements.authToken.value = status.config.authToken
     this.elements.enabled.checked = status.config.enabled
+    this.elements.autoProcessingEnabled.checked = status.config.autoProcessingEnabled || false
 
     // Update stats
     this.elements.activeVisits.textContent = status.activeVisits.toString()
@@ -90,6 +94,15 @@ class PopupController {
       }
     })
 
+    // Toggle switches
+    this.elements.enabled.addEventListener('change', () => {
+      console.log('Enabled toggle changed:', this.elements.enabled.checked)
+    })
+
+    this.elements.autoProcessingEnabled.addEventListener('change', () => {
+      console.log('Auto processing toggle changed:', this.elements.autoProcessingEnabled.checked)
+    })
+
     // Pattern management
     const openPatternsButton = document.getElementById('openPatterns')
     if (openPatternsButton) {
@@ -109,6 +122,7 @@ class PopupController {
           serverUrl: this.elements.serverUrl.value,
           authToken: this.elements.authToken.value,
           enabled: this.elements.enabled.checked,
+          autoProcessingEnabled: this.elements.autoProcessingEnabled.checked,
         }
 
         await this.saveConfig(config)

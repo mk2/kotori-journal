@@ -17,16 +17,20 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('[Background] Kotori Journal Browser History extension installed')
 
   // Set default configuration
-  chrome.storage.local.get(['serverUrl', 'authToken', 'enabled'], result => {
-    const config = {
-      serverUrl: result.serverUrl || 'http://localhost:8765',
-      authToken: result.authToken || '',
-      enabled: result.enabled !== false,
-    }
+  chrome.storage.local.get(
+    ['serverUrl', 'authToken', 'enabled', 'autoProcessingEnabled'],
+    result => {
+      const config = {
+        serverUrl: result.serverUrl || 'http://localhost:8765',
+        authToken: result.authToken || '',
+        enabled: result.enabled !== false,
+        autoProcessingEnabled: result.autoProcessingEnabled !== false,
+      }
 
-    console.log('[Background] Setting default config:', config)
-    chrome.storage.local.set(config)
-  })
+      console.log('[Background] Setting default config:', config)
+      chrome.storage.local.set(config)
+    }
+  )
 })
 
 // Start tracking current active tab on startup
@@ -65,14 +69,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('[Background] Received message:', message.type, message)
 
   if (message.type === 'get-status') {
-    chrome.storage.local.get(['serverUrl', 'authToken', 'enabled'], config => {
-      const status = {
-        config,
-        activeVisits: pageTracker.getActiveVisitsCount(),
+    chrome.storage.local.get(
+      ['serverUrl', 'authToken', 'enabled', 'autoProcessingEnabled'],
+      config => {
+        const status = {
+          config,
+          activeVisits: pageTracker.getActiveVisitsCount(),
+        }
+        console.log('[Background] Sending status:', status)
+        sendResponse(status)
       }
-      console.log('[Background] Sending status:', status)
-      sendResponse(status)
-    })
+    )
     return true // Will respond asynchronously
   }
 
@@ -95,51 +102,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[Background] Content length:', message.data?.content?.length)
 
     // データを直接サーバーに送信して自動処理を依頼
-    chrome.storage.local.get(['serverUrl', 'authToken', 'enabled'], async config => {
-      console.log('[Background] Current config:', {
-        enabled: config.enabled,
-        hasAuthToken: !!config.authToken,
-        serverUrl: config.serverUrl,
-      })
-
-      if (!config.enabled) {
-        console.log('[Background] Extension disabled, skipping auto-processing')
-        return
-      }
-
-      if (!config.authToken) {
-        console.log('[Background] No auth token configured, skipping auto-processing')
-        return
-      }
-
-      try {
-        console.log('[Background] Sending auto-processing request to server')
-        const response = await fetch(`${config.serverUrl}/api/auto-content-processing`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${config.authToken}`,
-          },
-          body: JSON.stringify(message.data),
+    chrome.storage.local.get(
+      ['serverUrl', 'authToken', 'enabled', 'autoProcessingEnabled'],
+      async config => {
+        console.log('[Background] Current config:', {
+          enabled: config.enabled,
+          autoProcessingEnabled: config.autoProcessingEnabled,
+          hasAuthToken: !!config.authToken,
+          serverUrl: config.serverUrl,
         })
 
-        const result = await response.json()
-        console.log('[Background] Server response:', result)
-
-        if (response.ok && result.success) {
-          console.log(
-            '[Background] Auto-processing successful:',
-            result.processed,
-            'patterns processed'
-          )
-          // Optional: Show notification or update badge
-        } else {
-          console.log('[Background] Auto-processing failed or no patterns matched:', result)
+        if (!config.enabled) {
+          console.log('[Background] Extension disabled, skipping auto-processing')
+          return
         }
-      } catch (error) {
-        console.error('[Background] Error in auto-processing:', error)
+
+        if (!config.autoProcessingEnabled) {
+          console.log('[Background] Auto-processing disabled, skipping')
+          return
+        }
+
+        if (!config.authToken) {
+          console.log('[Background] No auth token configured, skipping auto-processing')
+          return
+        }
+
+        try {
+          console.log('[Background] Sending auto-processing request to server')
+          const response = await fetch(`${config.serverUrl}/api/auto-content-processing`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${config.authToken}`,
+            },
+            body: JSON.stringify(message.data),
+          })
+
+          const result = await response.json()
+          console.log('[Background] Server response:', result)
+
+          if (response.ok && result.success) {
+            console.log(
+              '[Background] Auto-processing successful:',
+              result.processed,
+              'patterns processed'
+            )
+            // Optional: Show notification or update badge
+          } else {
+            console.log('[Background] Auto-processing failed or no patterns matched:', result)
+          }
+        } catch (error) {
+          console.error('[Background] Error in auto-processing:', error)
+        }
       }
-    })
+    )
   }
 
   if (message.type === 'get-patterns') {

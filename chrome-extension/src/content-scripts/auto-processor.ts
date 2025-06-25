@@ -28,6 +28,15 @@ class AutoContentProcessor {
     this.processed = true
 
     try {
+      // 自動コンテンツ処理が有効かどうかをチェック
+      const result = await chrome.storage.local.get(['config'])
+      const config = result.config || {}
+
+      if (!config.autoProcessingEnabled) {
+        console.log('[AutoContentProcessor] Auto processing is disabled, skipping')
+        return
+      }
+
       const currentUrl = window.location.href
       console.log('[AutoContentProcessor] Starting processPage for URL:', currentUrl)
 

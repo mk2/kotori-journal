@@ -101,8 +101,12 @@
     
     .switch input {
       opacity: 0;
-      width: 0;
-      height: 0;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      cursor: pointer;
+      margin: 0;
+      z-index: 2;
     }
     
     .slider {
@@ -115,6 +119,7 @@
       background-color: #ccc;
       transition: .4s;
       border-radius: 24px;
+      z-index: 1;
     }
     
     .slider:before {
@@ -207,6 +212,14 @@
     <label for="enabled">履歴記録を有効にする</label>
     <div class="switch">
       <input type="checkbox" id="enabled">
+      <span class="slider"></span>
+    </div>
+  </div>
+  
+  <div class="toggle">
+    <label for="autoProcessingEnabled">自動コンテンツ処理を有効にする</label>
+    <div class="switch">
+      <input type="checkbox" id="autoProcessingEnabled">
       <span class="slider"></span>
     </div>
   </div>
