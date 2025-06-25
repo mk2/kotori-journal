@@ -6,7 +6,7 @@ import { JournalService } from './journal-service.js'
 import { FileLogger } from '../utils/file-logger.js'
 import { ContentPatternManager } from '../models/content-pattern.js'
 import { ContentProcessor } from './content-processor.js'
-import { ContentPattern, ContentProcessingRequest } from '../types/content-processing.js'
+import { ContentProcessingRequest } from '../types/content-processing.js'
 
 interface BrowserHistoryEntry {
   url: string
@@ -482,7 +482,7 @@ export class HTTPServer {
             return
           }
 
-          const { url, title, content, metadata } = req.body
+          const { url, title, content } = req.body
 
           if (!url || !title || !content) {
             res.status(400).json({ error: 'Missing required fields: url, title, content' })

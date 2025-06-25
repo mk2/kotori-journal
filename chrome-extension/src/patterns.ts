@@ -291,7 +291,7 @@ class PatternManager {
     // Test regex pattern
     try {
       new RegExp(urlPattern)
-    } catch (_error) {
+    } catch {
       this.showStatus('URLパターンの正規表現が無効です', 'error')
       return
     }
