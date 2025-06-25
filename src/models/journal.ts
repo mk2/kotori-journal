@@ -49,6 +49,20 @@ export class Journal {
     }
   }
 
+  updateEntry(entryId: string, updates: Partial<JournalEntry>): boolean {
+    const existingIndex = this.entries.findIndex(e => e.id === entryId)
+    if (existingIndex !== -1) {
+      this.entries[existingIndex] = {
+        ...this.entries[existingIndex],
+        ...updates,
+        id: entryId, // Preserve original ID
+        timestamp: this.entries[existingIndex].timestamp, // Preserve original timestamp unless explicitly updated
+      }
+      return true
+    }
+    return false
+  }
+
   getEntries(): JournalEntry[] {
     return [...this.entries]
   }

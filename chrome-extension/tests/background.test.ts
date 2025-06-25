@@ -14,6 +14,15 @@ describe('PageTracker', () => {
   })
 
   describe('Tab tracking', () => {
+    beforeEach(() => {
+      // Mock Chrome storage for DataSender in all tests
+      vi.mocked(chrome.storage.local.get).mockResolvedValue({
+        serverUrl: 'http://localhost:8765',
+        authToken: 'test-token',
+        enabled: false, // Disable actual network calls
+      })
+    })
+
     it('should start tracking when a tab is activated', async () => {
       const mockTab = {
         id: 1,
@@ -67,14 +76,34 @@ describe('PageTracker', () => {
 
   describe('Duration calculation', () => {
     it('should calculate duration correctly', async () => {
-      // Mock current time
-      const startTime = 1000
-      const endTime = 2000
+      // Mock Chrome storage for DataSender
+      vi.mocked(chrome.storage.local.get).mockResolvedValue({
+        serverUrl: 'http://localhost:8765',
+        authToken: 'test-token',
+        enabled: true,
+      })
 
-      vi.spyOn(Date, 'now').mockReturnValueOnce(startTime).mockReturnValueOnce(endTime)
+      // Mock create endpoint response
+      const mockCreateResponse = {
+        ok: true,
+        json: async () => ({ success: true, entry: { id: 'entry123' } }),
+      }
+      global.fetch = vi.fn().mockResolvedValue(mockCreateResponse as any)
+
+      // Mock Date.now for consistent timing
+      const startTime = 1000
+      const endTime = 2000 // 1 second duration
+      const mockDateNow = vi.spyOn(Date, 'now')
+      mockDateNow.mockReturnValue(startTime)
 
       // Start tracking
       pageTracker.startTracking(1, 'https://example.com', 'Example Page')
+
+      // Wait for async creation
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Change mock to return endTime for stopTracking
+      mockDateNow.mockReturnValue(endTime)
 
       // Stop tracking
       const visit = await pageTracker.stopTracking(1)
@@ -102,6 +131,123 @@ describe('PageTracker', () => {
         description: 'OGP Description',
         image: 'https://example.com/image.jpg',
       })
+    })
+  })
+
+  describe('Two-phase recording', () => {
+    beforeEach(() => {
+      // Mock Chrome storage for DataSender
+      vi.mocked(chrome.storage.local.get).mockResolvedValue({
+        serverUrl: 'http://localhost:8765',
+        authToken: 'test-token',
+        enabled: true,
+      })
+
+      global.fetch = vi.fn()
+    })
+
+    it('should create entry immediately on startTracking', async () => {
+      const mockCreateResponse = {
+        ok: true,
+        json: async () => ({ success: true, entry: { id: 'entry123' } }),
+      }
+      vi.mocked(global.fetch).mockResolvedValue(mockCreateResponse as any)
+
+      pageTracker.startTracking(1, 'https://example.com', 'Example Page')
+
+      // Wait for async creation
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8765/api/browser-history/create',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer test-token',
+          },
+          body: expect.stringMatching(/"url":"https:\/\/example\.com"/),
+        }
+      )
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8765/api/browser-history/create',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer test-token',
+          },
+          body: expect.stringMatching(/"title":"Example Page"/),
+        }
+      )
+    })
+
+    it('should update entry with duration on stopTracking', async () => {
+      const mockCreateResponse = {
+        ok: true,
+        json: async () => ({ success: true, entry: { id: 'entry123' } }),
+      }
+      const mockUpdateResponse = {
+        ok: true,
+        json: async () => ({ success: true }),
+      }
+
+      vi.mocked(global.fetch)
+        .mockResolvedValueOnce(mockCreateResponse as any)
+        .mockResolvedValueOnce(mockUpdateResponse as any)
+
+      // Mock Date.now for consistent timing
+      const startTime = 1000
+      const endTime = 4000 // 3 second duration
+      const mockDateNow = vi.spyOn(Date, 'now')
+      mockDateNow.mockReturnValue(startTime)
+
+      pageTracker.startTracking(1, 'https://example.com', 'Example Page')
+
+      // Wait for async creation
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Change mock to return endTime for stopTracking
+      mockDateNow.mockReturnValue(endTime)
+
+      await pageTracker.stopTracking(1)
+
+      expect(global.fetch).toHaveBeenCalledTimes(2)
+      expect(global.fetch).toHaveBeenNthCalledWith(
+        2,
+        'http://localhost:8765/api/browser-history/update',
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer test-token',
+          },
+          body: JSON.stringify({
+            entryId: 'entry123',
+            duration: 3,
+          }),
+        }
+      )
+    })
+
+    it('should not update entry if no entryId exists', async () => {
+      // Mock failed create response
+      const mockCreateResponse = {
+        ok: false,
+        text: async () => 'Server error',
+      }
+      vi.mocked(global.fetch).mockResolvedValue(mockCreateResponse as any)
+
+      pageTracker.startTracking(1, 'https://example.com', 'Example Page')
+
+      // Wait for async creation
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      await pageTracker.stopTracking(1)
+
+      // Should only have one call (the failed create), no update call
+      expect(global.fetch).toHaveBeenCalledTimes(1)
     })
   })
 })
@@ -189,7 +335,10 @@ describe('DataSender', () => {
 
     await dataSender.send(entry)
 
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to send browser history:', expect.any(Error))
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[DataSender] Failed to send browser history:',
+      expect.any(Error)
+    )
 
     consoleSpy.mockRestore()
   })

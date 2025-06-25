@@ -82,7 +82,7 @@ class PopupController {
         } else {
           this.showStatus('接続失敗', 'disconnected')
         }
-      } catch (error) {
+      } catch (_error) {
         this.showStatus('接続エラー', 'disconnected')
       } finally {
         this.elements.testConnection.textContent = '接続テスト'
@@ -103,7 +103,7 @@ class PopupController {
 
         await this.saveConfig(config)
         this.showStatus('設定を保存しました', 'connected')
-      } catch (error) {
+      } catch (_error) {
         this.showStatus('保存に失敗しました', 'disconnected')
       } finally {
         this.elements.saveSettings.textContent = '保存'

@@ -1,4 +1,9 @@
-import type { PageVisit, BrowserHistoryEntry, OGPData } from '../types'
+import type {
+  PageVisit,
+  BrowserHistoryCreateEntry,
+  BrowserHistoryUpdateEntry,
+  OGPData,
+} from '../types'
 import { DataSender } from './data-sender'
 
 export class PageTracker {
@@ -58,13 +63,19 @@ export class PageTracker {
 
   startTracking(tabId: number, url: string, title: string): void {
     console.log(`[PageTracker] Starting tracking for tab ${tabId}: ${title} (${url})`)
-    this.activeVisits.set(tabId, {
+
+    const visit: PageVisit = {
       tabId,
       url,
       title,
       startTime: Date.now(),
-    })
+    }
+
+    this.activeVisits.set(tabId, visit)
     console.log(`[PageTracker] Active visits: ${this.activeVisits.size}`)
+
+    // Immediately create journal entry
+    this.createJournalEntry(tabId)
   }
 
   async stopTracking(tabId: number): Promise<(PageVisit & { duration: number }) | undefined> {
@@ -83,20 +94,27 @@ export class PageTracker {
       `[PageTracker] Stopped tracking tab ${tabId}: ${visit.title}, duration: ${duration}s`
     )
 
-    // Send to server if duration is meaningful (> 0 seconds)
-    if (duration > 0) {
-      const entry: BrowserHistoryEntry = {
-        url: visit.url,
-        title: visit.title,
-        visitedAt: new Date(visit.startTime).toISOString(),
+    // If we have an entryId, update the existing entry with duration
+    if (visit.entryId && duration > 0) {
+      const update: BrowserHistoryUpdateEntry = {
+        entryId: visit.entryId,
         duration,
-        ogp: visit.ogp,
       }
 
-      console.log(`[PageTracker] Sending entry to server:`, entry)
-      await this.dataSender.send(entry)
+      console.log(`[PageTracker] Updating entry with duration:`, update)
+      const success = await this.dataSender.update(update)
+
+      if (success) {
+        console.log(
+          `[PageTracker] Successfully updated entry ${visit.entryId} with duration ${duration}s`
+        )
+      } else {
+        console.error(`[PageTracker] Failed to update entry ${visit.entryId} with duration`)
+      }
+    } else if (!visit.entryId) {
+      console.log(`[PageTracker] No entryId found for tab ${tabId}, entry was not created`)
     } else {
-      console.log(`[PageTracker] Duration too short (${duration}s), not sending`)
+      console.log(`[PageTracker] Duration too short (${duration}s), not updating`)
     }
 
     return { ...visit, duration }
@@ -107,8 +125,37 @@ export class PageTracker {
     if (visit) {
       console.log(`[PageTracker] Updated OGP data for tab ${tabId}:`, ogpData)
       visit.ogp = ogpData
+
+      // If we haven't created the journal entry yet, do it now with OGP data
+      if (!visit.entryId) {
+        this.createJournalEntry(tabId)
+      }
     } else {
       console.log(`[PageTracker] No active visit found for tab ${tabId} when updating OGP data`)
+    }
+  }
+
+  private async createJournalEntry(tabId: number): Promise<void> {
+    const visit = this.activeVisits.get(tabId)
+    if (!visit || visit.entryId) {
+      return // Already created or visit not found
+    }
+
+    const createEntry: BrowserHistoryCreateEntry = {
+      url: visit.url,
+      title: visit.title,
+      visitedAt: new Date(visit.startTime).toISOString(),
+      ogp: visit.ogp,
+    }
+
+    console.log(`[PageTracker] Creating journal entry for tab ${tabId}:`, createEntry)
+    const entryId = await this.dataSender.create(createEntry)
+
+    if (entryId) {
+      visit.entryId = entryId
+      console.log(`[PageTracker] Journal entry created with ID: ${entryId}`)
+    } else {
+      console.error(`[PageTracker] Failed to create journal entry for tab ${tabId}`)
     }
   }
 

@@ -57,6 +57,22 @@ export class JournalService {
     return entry
   }
 
+  async updateEntry(entryId: string, updates: Partial<JournalEntry>): Promise<boolean> {
+    const success = this.journal.updateEntry(entryId, updates)
+    if (success) {
+      // Find the updated entry and save it to temp storage
+      const updatedEntry = this.journal.getEntries().find(e => e.id === entryId)
+      if (updatedEntry) {
+        await this.storage.saveEntryToTemp(updatedEntry)
+      }
+    }
+    return success
+  }
+
+  getEntryById(entryId: string): JournalEntry | undefined {
+    return this.journal.getEntries().find(e => e.id === entryId)
+  }
+
   getEntries(): JournalEntry[] {
     return this.journal.getEntries()
   }

@@ -17,6 +17,22 @@ interface BrowserHistoryEntry {
   }
 }
 
+interface BrowserHistoryCreateEntry {
+  url: string
+  title: string
+  visitedAt: string
+  ogp?: {
+    title?: string
+    description?: string
+    image?: string
+  }
+}
+
+interface BrowserHistoryUpdateEntry {
+  entryId: string
+  duration: number
+}
+
 interface HTTPServerOptions {
   port?: number
   authToken?: string
@@ -176,6 +192,123 @@ export class HTTPServer {
       }
     )
 
+    // Create browser history entry endpoint
+    app.post(
+      '/api/browser-history/create',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          await this.logger?.info('Received browser history create request', req.body)
+
+          const entry = req.body as BrowserHistoryCreateEntry
+
+          // Validate required fields
+          if (!entry.url || !entry.title || !entry.visitedAt) {
+            await this.logger?.error('Create validation failed - missing required fields', {
+              hasUrl: !!entry.url,
+              hasTitle: !!entry.title,
+              hasVisitedAt: !!entry.visitedAt,
+            })
+            res.status(400).json({ error: 'Missing required fields' })
+            return
+          }
+
+          // Create journal entry content
+          const displayTitle = entry.ogp?.title || entry.title
+          const content = `Visited: ${displayTitle} (URL: ${entry.url})`
+
+          await this.logger?.info('Creating initial journal entry', {
+            content,
+            category: 'Web閲覧',
+          })
+
+          // Add metadata
+          const metadata: Record<string, unknown> = {
+            url: entry.url,
+            duration: 0, // Will be updated later
+          }
+
+          if (entry.ogp) {
+            metadata.ogp = entry.ogp
+          }
+
+          // Save to journal with metadata
+          const journalEntry = await this.journalService.addEntry(
+            content,
+            'Web閲覧',
+            'entry',
+            metadata
+          )
+
+          await this.logger?.info('Initial journal entry created', {
+            id: journalEntry.id,
+            content: journalEntry.content,
+            timestamp: journalEntry.timestamp,
+          })
+
+          res.status(201).json({
+            success: true,
+            entry: {
+              id: journalEntry.id,
+              timestamp: journalEntry.timestamp,
+            },
+          })
+        } catch (error) {
+          await this.logger?.error('Error creating browser history entry', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
+    // Update browser history entry with duration
+    app.patch(
+      '/api/browser-history/update',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          await this.logger?.info('Received browser history update request', req.body)
+
+          const update = req.body as BrowserHistoryUpdateEntry
+
+          // Validate required fields
+          if (!update.entryId || typeof update.duration !== 'number') {
+            await this.logger?.error('Update validation failed - missing required fields', {
+              hasEntryId: !!update.entryId,
+              hasDuration: typeof update.duration === 'number',
+            })
+            res.status(400).json({ error: 'Missing required fields' })
+            return
+          }
+
+          await this.logger?.info('Updating journal entry with duration', {
+            entryId: update.entryId,
+            duration: update.duration,
+          })
+
+          // Update the journal entry
+          const success = await this.updateJournalEntryDuration(update.entryId, update.duration)
+
+          if (success) {
+            await this.logger?.info('Journal entry updated successfully', {
+              entryId: update.entryId,
+              duration: update.duration,
+            })
+            res.json({ success: true })
+          } else {
+            await this.logger?.error('Journal entry not found', { entryId: update.entryId })
+            res.status(404).json({ error: 'Entry not found' })
+          }
+        } catch (error) {
+          await this.logger?.error('Error updating browser history entry', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
     // Health check endpoint
     app.get('/health', (req, res) => {
       res.json({ status: 'ok', timestamp: new Date().toISOString() })
@@ -241,5 +374,29 @@ export class HTTPServer {
 
   getAuthToken(): string {
     return this.authToken
+  }
+
+  private async updateJournalEntryDuration(entryId: string, duration: number): Promise<boolean> {
+    const entry = this.journalService.getEntryById(entryId)
+    if (!entry) {
+      return false
+    }
+
+    // Update content to include duration
+    const displayTitle =
+      entry.metadata?.ogp?.title || entry.content.match(/Visited: (.+?) \(/)?.[1] || 'Unknown'
+    const url = entry.metadata?.url || 'Unknown'
+    const newContent = `Visited: ${displayTitle} (URL: ${url}, Duration: ${duration}s)`
+
+    // Update metadata
+    const newMetadata = {
+      ...entry.metadata,
+      duration,
+    }
+
+    return await this.journalService.updateEntry(entryId, {
+      content: newContent,
+      metadata: newMetadata,
+    })
   }
 }
