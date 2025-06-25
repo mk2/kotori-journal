@@ -49,9 +49,10 @@ export class JournalService {
   async addEntry(
     content: string,
     category?: string,
-    type: 'entry' | 'ai_question' | 'ai_response' = 'entry'
+    type: 'entry' | 'ai_question' | 'ai_response' = 'entry',
+    metadata?: Record<string, unknown>
   ): Promise<JournalEntry> {
-    const entry = this.journal.addEntry(content, category, type)
+    const entry = this.journal.addEntry(content, category, type, metadata)
     await this.storage.saveEntryToTemp(entry)
     return entry
   }

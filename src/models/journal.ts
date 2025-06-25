@@ -4,6 +4,7 @@ export interface JournalEntry {
   category: string
   timestamp: Date
   type?: 'entry' | 'ai_question' | 'ai_response'
+  metadata?: Record<string, unknown>
 }
 
 export class Journal {
@@ -12,7 +13,8 @@ export class Journal {
   addEntry(
     content: string,
     category: string = '未分類',
-    type: 'entry' | 'ai_question' | 'ai_response' = 'entry'
+    type: 'entry' | 'ai_question' | 'ai_response' = 'entry',
+    metadata?: Record<string, unknown>
   ): JournalEntry {
     const entry: JournalEntry = {
       id: this.generateId(),
@@ -20,6 +22,7 @@ export class Journal {
       category,
       timestamp: new Date(),
       type,
+      metadata,
     }
 
     this.entries.push(entry)
