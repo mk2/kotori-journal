@@ -3,11 +3,13 @@
 ## ビルド方法
 
 1. **依存関係のインストール**
+
    ```bash
    npm install
    ```
 
 2. **拡張機能のビルド**
+
    ```bash
    npm run build
    ```
@@ -38,12 +40,13 @@
 ## 設定方法
 
 1. **サーバーの起動**
+
    ```bash
    cd /workspaces/kotori-journal
-   
+
    # Claude API キーを設定（自動コンテンツ処理を使用する場合）
    export ANTHROPIC_API_KEY="your-api-key-here"
-   
+
    # サーバーを起動
    npm run dev server start
    ```
@@ -62,6 +65,7 @@
 ## 機能確認
 
 ### 基本的な履歴記録
+
 1. 任意のWebページを開く
 2. しばらく閲覧して別のタブに移動
 3. kotori-journal で履歴が記録されていることを確認
@@ -70,7 +74,9 @@
    ```
 
 ### 自動コンテンツ処理（Claude API必要）
+
 1. コンテンツパターンを作成
+
    ```bash
    curl -X POST http://localhost:8765/api/content-patterns \
      -H "Content-Type: application/json" \
@@ -90,16 +96,19 @@
 ## トラブルシューティング
 
 ### 拡張機能が動作しない
+
 - Developer Tools のコンソールでエラーを確認
 - 拡張機能の再読み込みを試す
 - `chrome://extensions/` でエラーが表示されていないか確認
 
 ### サーバーに接続できない
+
 - サーバーが起動しているか確認: `npm run dev server status`
 - 認証トークンが正しいか確認
 - ファイアウォール設定を確認
 
 ### 自動コンテンツ処理が動作しない
+
 - `ANTHROPIC_API_KEY` 環境変数が設定されているか確認
 - サーバーログを確認: `tail -f ~/.kotori-journal-data/server.log`
 - URLパターンが正しくマッチしているか確認
@@ -107,6 +116,7 @@
 ## 開発者向け
 
 ### 開発モード
+
 ```bash
 # ファイル変更を監視してビルド
 npm run dev
@@ -120,6 +130,7 @@ npm test
 ```
 
 ### デバッグ
+
 - Chrome Developer Tools で拡張機能をデバッグ可能
 - Background Script: `chrome://extensions/` → 拡張機能の詳細 → 「バックグラウンドページ」
 - Content Script: 通常のページの Developer Tools で確認
