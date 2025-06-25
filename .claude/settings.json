@@ -15,7 +15,8 @@
       "Bash(cp:*)",
       "Bash(sed:*)",
       "Bash(cat:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(mv:*)"
     ],
     "deny": ["Bash(git add:*)", "Bash(git push:*)", "Bash(git fetch:*)"]
   }
