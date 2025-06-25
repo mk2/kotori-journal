@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { ServerCommand } from './server-command.js'
-import { Config } from '../utils/config.js'
+import { ServerCommand } from '../../src/commands/server-command.js'
+import { Config } from '../../src/utils/config.js'
 import fs from 'fs/promises'
 import path from 'path'
 
