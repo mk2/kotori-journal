@@ -14,21 +14,14 @@
   "devDependencies": {
     "@types/chrome": "^0.0.270",
     "@types/node": "^24.0.0",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
-    "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.28.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.5.3",
+    "sharp": "^0.34.2",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.2.3"
-  },
-  "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "sharp": "^0.34.2"
   }
 }
