@@ -9,6 +9,7 @@
   - npm test
   - npm run lint
   - npm run typecheck
+- Always create test files in tests directory
 
 # Documenting Rules
 - If you run into trouble and figure out how to solve it, be sure to write it down in TROUBLE_SHOOTING.md.
