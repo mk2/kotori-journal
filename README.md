@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/images/icon.png" alt="Kotori Journal Icon" width="200">
+  <img src="docs/images/kotori_original.png" alt="Kotori Journal Icon" width="200">
   
   # Kotori Journal
 

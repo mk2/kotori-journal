@@ -2,7 +2,7 @@ const sharp = require('sharp')
 const path = require('path')
 
 const createIconsFromSource = async () => {
-  const sourcePath = path.join(__dirname, '../docs/images/icon.png')
+  const sourcePath = path.join(__dirname, '../docs/images/kotori_icon.png')
   const sizes = [16, 48, 128]
 
   for (const size of sizes) {
