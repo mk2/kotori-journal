@@ -1,10 +1,12 @@
 import { PageTracker } from './services/page-tracker'
 import { DataSender } from './services/data-sender'
+import { ContentProcessingService } from './services/content-processing-service'
 
 // Initialize services
 console.log('[Background] Initializing services...')
 const dataSender = new DataSender()
 const pageTracker = new PageTracker(dataSender)
+const contentProcessingService = new ContentProcessingService()
 console.log('[Background] Services initialized')
 
 // Check active tabs immediately
@@ -86,5 +88,88 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'ogp-data') {
     console.log('[Background] Received OGP data from content script:', message.data)
     // This is handled by PageTracker
+  }
+
+  if (message.type === 'auto-process-content') {
+    console.log('[Background] Received auto-process request for URL:', message.data?.url)
+    console.log('[Background] Content length:', message.data?.content?.length)
+
+    // データを直接サーバーに送信して自動処理を依頼
+    chrome.storage.local.get(['serverUrl', 'authToken', 'enabled'], async config => {
+      console.log('[Background] Current config:', {
+        enabled: config.enabled,
+        hasAuthToken: !!config.authToken,
+        serverUrl: config.serverUrl,
+      })
+
+      if (!config.enabled) {
+        console.log('[Background] Extension disabled, skipping auto-processing')
+        return
+      }
+
+      if (!config.authToken) {
+        console.log('[Background] No auth token configured, skipping auto-processing')
+        return
+      }
+
+      try {
+        console.log('[Background] Sending auto-processing request to server')
+        const response = await fetch(`${config.serverUrl}/api/auto-content-processing`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.authToken}`,
+          },
+          body: JSON.stringify(message.data),
+        })
+
+        const result = await response.json()
+        console.log('[Background] Server response:', result)
+
+        if (response.ok && result.success) {
+          console.log(
+            '[Background] Auto-processing successful:',
+            result.processed,
+            'patterns processed'
+          )
+          // Optional: Show notification or update badge
+        } else {
+          console.log('[Background] Auto-processing failed or no patterns matched:', result)
+        }
+      } catch (error) {
+        console.error('[Background] Error in auto-processing:', error)
+      }
+    })
+  }
+
+  if (message.type === 'get-patterns') {
+    contentProcessingService.getAllPatterns().then(patterns => {
+      sendResponse({ patterns })
+    })
+    return true
+  }
+
+  if (message.type === 'create-pattern') {
+    const { name, urlPattern, prompt, enabled } = message.data
+    contentProcessingService.createPattern(name, urlPattern, prompt, enabled).then(pattern => {
+      sendResponse({ pattern })
+    })
+    return true
+  }
+
+  if (message.type === 'update-pattern') {
+    const { id, updates } = message.data
+    contentProcessingService.updatePattern(id, updates).then(success => {
+      sendResponse({ success })
+    })
+    return true
+  }
+
+  if (message.type === 'delete-pattern') {
+    const { id } = message.data
+    contentProcessingService.deletePattern(id).then(success => {
+      sendResponse({ success })
+    })
+    return true
   }
 })

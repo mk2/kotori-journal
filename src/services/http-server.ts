@@ -4,6 +4,9 @@ import bodyParser from 'body-parser'
 import { Server } from 'http'
 import { JournalService } from './journal-service.js'
 import { FileLogger } from '../utils/file-logger.js'
+import { ContentPatternManager } from '../models/content-pattern.js'
+import { ContentProcessor } from './content-processor.js'
+import { ContentPattern, ContentProcessingRequest } from '../types/content-processing.js'
 
 interface BrowserHistoryEntry {
   url: string
@@ -37,6 +40,8 @@ interface HTTPServerOptions {
   port?: number
   authToken?: string
   logger?: FileLogger
+  patternManager?: ContentPatternManager
+  contentProcessor?: ContentProcessor
 }
 
 export class HTTPServer {
@@ -46,12 +51,16 @@ export class HTTPServer {
   private authToken: string
   private journalService: JournalService
   private logger?: FileLogger
+  private patternManager?: ContentPatternManager
+  private contentProcessor?: ContentProcessor
 
   constructor(journalService: JournalService, options: HTTPServerOptions = {}) {
     this.journalService = journalService
     this.port = options.port ?? 8765
     this.authToken = options.authToken ?? this.generateToken()
     this.logger = options.logger
+    this.patternManager = options.patternManager
+    this.contentProcessor = options.contentProcessor
     this.app = this.createApp()
   }
 
@@ -309,6 +318,285 @@ export class HTTPServer {
       }
     )
 
+    // Content patterns CRUD endpoints
+    app.get(
+      '/api/content-patterns',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          if (!this.patternManager) {
+            res.status(503).json({ error: 'Content pattern management not available' })
+            return
+          }
+
+          const patterns = this.patternManager.getPatterns()
+          res.json({ patterns })
+        } catch (error) {
+          await this.logger?.error('Error getting content patterns', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
+    app.post(
+      '/api/content-patterns',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          if (!this.patternManager) {
+            res.status(503).json({ error: 'Content pattern management not available' })
+            return
+          }
+
+          const { name, urlPattern, prompt, enabled = true } = req.body
+
+          if (!name || !urlPattern || !prompt) {
+            res.status(400).json({ error: 'Missing required fields: name, urlPattern, prompt' })
+            return
+          }
+
+          const pattern = this.patternManager.addPattern(name, urlPattern, prompt, enabled)
+          await this.journalService.savePatterns() // Save to storage
+          await this.logger?.info('Content pattern created', { patternId: pattern.id, name })
+
+          res.status(201).json({ pattern })
+        } catch (error) {
+          await this.logger?.error('Error creating content pattern', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
+    app.put(
+      '/api/content-patterns/:id',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          if (!this.patternManager) {
+            res.status(503).json({ error: 'Content pattern management not available' })
+            return
+          }
+
+          const { id } = req.params
+          const updates = req.body
+
+          const success = this.patternManager.updatePattern(id, updates)
+          if (success) {
+            await this.journalService.savePatterns() // Save to storage
+            await this.logger?.info('Content pattern updated', { patternId: id })
+            res.json({ success: true })
+          } else {
+            res.status(404).json({ error: 'Pattern not found' })
+          }
+        } catch (error) {
+          await this.logger?.error('Error updating content pattern', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
+    app.delete(
+      '/api/content-patterns/:id',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          if (!this.patternManager) {
+            res.status(503).json({ error: 'Content pattern management not available' })
+            return
+          }
+
+          const { id } = req.params
+          const success = this.patternManager.removePattern(id)
+
+          if (success) {
+            await this.journalService.savePatterns() // Save to storage
+            await this.logger?.info('Content pattern deleted', { patternId: id })
+            res.json({ success: true })
+          } else {
+            res.status(404).json({ error: 'Pattern not found' })
+          }
+        } catch (error) {
+          await this.logger?.error('Error deleting content pattern', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
+    // Content processing endpoint
+    app.post(
+      '/api/content-processing',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          if (!this.contentProcessor) {
+            res.status(503).json({ error: 'Content processing not available' })
+            return
+          }
+
+          const request = req.body as ContentProcessingRequest
+
+          if (!request.url || !request.title || !request.content || !request.patternId) {
+            res
+              .status(400)
+              .json({ error: 'Missing required fields: url, title, content, patternId' })
+            return
+          }
+
+          await this.logger?.info('Processing content request', {
+            url: request.url,
+            patternId: request.patternId,
+          })
+
+          const result = await this.contentProcessor.processContent(request)
+
+          if (result.success) {
+            res.json(result)
+          } else {
+            res.status(400).json(result)
+          }
+        } catch (error) {
+          await this.logger?.error('Error processing content', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
+    // Auto content processing endpoint (server-side pattern matching and processing)
+    app.post(
+      '/api/auto-content-processing',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          if (!this.contentProcessor || !this.patternManager) {
+            res.status(503).json({ error: 'Content processing not available' })
+            return
+          }
+
+          const { url, title, content, metadata } = req.body
+
+          if (!url || !title || !content) {
+            res.status(400).json({ error: 'Missing required fields: url, title, content' })
+            return
+          }
+
+          await this.logger?.info('Auto-processing content request', {
+            url,
+            contentLength: content.length,
+          })
+
+          // Find matching patterns for this URL
+          const matchingPatterns = this.patternManager.findMatchingPatterns(url)
+
+          if (matchingPatterns.length === 0) {
+            await this.logger?.info('No matching patterns found for auto-processing', { url })
+            res.json({ success: false, message: 'No matching patterns found' })
+            return
+          }
+
+          const results = []
+
+          // Process content with each matching pattern
+          for (const pattern of matchingPatterns) {
+            try {
+              await this.logger?.info('Auto-processing with pattern', {
+                url,
+                patternId: pattern.id,
+                patternName: pattern.name,
+              })
+
+              const result = await this.contentProcessor.processContent({
+                url,
+                title,
+                content,
+                patternId: pattern.id,
+              })
+
+              if (result.success) {
+                results.push({
+                  patternId: pattern.id,
+                  patternName: pattern.name,
+                  entryId: result.entryId,
+                  success: true,
+                })
+
+                await this.logger?.info('Auto-processing successful', {
+                  url,
+                  patternName: pattern.name,
+                  entryId: result.entryId,
+                })
+              } else {
+                results.push({
+                  patternId: pattern.id,
+                  patternName: pattern.name,
+                  error: result.error,
+                  success: false,
+                })
+              }
+            } catch (error) {
+              await this.logger?.error('Error in auto-processing with pattern', {
+                url,
+                patternId: pattern.id,
+                error: error instanceof Error ? error.message : error,
+              })
+
+              results.push({
+                patternId: pattern.id,
+                patternName: pattern.name,
+                error: 'Processing error',
+                success: false,
+              })
+            }
+          }
+
+          res.json({
+            success: true,
+            processed: results.filter(r => r.success).length,
+            total: results.length,
+            results,
+          })
+        } catch (error) {
+          await this.logger?.error('Error in auto-content-processing', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
+    // Get enabled patterns for URL matching
+    app.get(
+      '/api/content-patterns/match/:url',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          if (!this.patternManager) {
+            res.status(503).json({ error: 'Content pattern management not available' })
+            return
+          }
+
+          const url = decodeURIComponent(req.params.url)
+          const matchingPatterns = this.patternManager.findMatchingPatterns(url)
+
+          res.json({ patterns: matchingPatterns })
+        } catch (error) {
+          await this.logger?.error('Error matching content patterns', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
     // Health check endpoint
     app.get('/health', (req, res) => {
       res.json({ status: 'ok', timestamp: new Date().toISOString() })
@@ -384,8 +672,10 @@ export class HTTPServer {
 
     // Update content to include duration
     const displayTitle =
-      entry.metadata?.ogp?.title || entry.content.match(/Visited: (.+?) \(/)?.[1] || 'Unknown'
-    const url = entry.metadata?.url || 'Unknown'
+      (entry.metadata as any)?.ogp?.title ||
+      entry.content.match(/Visited: (.+?) \(/)?.[1] ||
+      'Unknown'
+    const url = (entry.metadata as any)?.url || 'Unknown'
     const newContent = `Visited: ${displayTitle} (URL: ${url}, Duration: ${duration}s)`
 
     // Update metadata

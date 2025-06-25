@@ -25,6 +25,8 @@ async function startServer() {
     port,
     authToken,
     logger,
+    patternManager: journalService.getPatternManager(),
+    contentProcessor: journalService.getContentProcessor(),
   })
 
   // Update config file with actual auth token

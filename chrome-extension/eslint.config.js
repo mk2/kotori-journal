@@ -38,6 +38,16 @@ export default [
         __dirname: 'readonly',
         module: 'readonly',
         exports: 'readonly',
+        Buffer: 'readonly',
+        
+        // Additional DOM types
+        Element: 'readonly',
+        HTMLFormElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
+        
+        // Browser APIs
+        confirm: 'readonly',
+        prompt: 'readonly',
         
         // Test globals
         global: 'readonly',
@@ -75,7 +85,7 @@ export default [
     },
   },
   {
-    // Ignore built files
-    ignores: ['dist/**', 'node_modules/**'],
+    // Ignore built files and build scripts
+    ignores: ['dist/**', 'node_modules/**', 'create-*.js'],
   },
 ]

@@ -90,6 +90,16 @@ class PopupController {
       }
     })
 
+    // Pattern management
+    const openPatternsButton = document.getElementById('openPatterns')
+    if (openPatternsButton) {
+      openPatternsButton.addEventListener('click', () => {
+        chrome.tabs.create({
+          url: chrome.runtime.getURL('patterns.html'),
+        })
+      })
+    }
+
     this.elements.saveSettings.addEventListener('click', async () => {
       this.elements.saveSettings.textContent = '保存中...'
       this.elements.saveSettings.disabled = true
