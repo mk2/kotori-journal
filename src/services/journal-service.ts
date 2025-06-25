@@ -113,6 +113,10 @@ export class JournalService {
     return this.journal.getEntries()
   }
 
+  async getLastUpdateTime(): Promise<number> {
+    return await this.storage.getLastUpdateTime()
+  }
+
   getEntriesByDate(date: Date): JournalEntry[] {
     return this.journal.getEntriesByDate(date)
   }

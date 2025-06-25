@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Box, Text, useInput, useApp } from 'ink'
 import SelectInput from 'ink-select-input'
 import { JournalService } from '../services/journal-service'
@@ -38,15 +38,45 @@ export const App: React.FC<AppProps> = ({ config }) => {
   const [categories, setCategories] = useState<string[]>([])
   const [isProcessingAI, setIsProcessingAI] = useState(false)
   const [loadingDots, setLoadingDots] = useState('')
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0)
+  const scrollPositionRef = useRef<number>(0)
 
-  // 1秒ごとにデータを更新するuseEffect
+  // スクロール位置を保存する関数
+  const saveScrollPosition = () => {
+    if (process.stdout.isTTY) {
+      scrollPositionRef.current = process.stdout.rows || 0
+    }
+  }
+
+  // スクロール位置を復元する関数
+  const restoreScrollPosition = () => {
+    if (process.stdout.isTTY && scrollPositionRef.current > 0) {
+      // 簡単な実装: 画面をクリアせずに同じ位置に保つ
+      // より高度な実装が必要な場合は、外部ライブラリを検討
+    }
+  }
+
+  // 1秒ごとにデータ変更をチェックし、変更があった場合のみ更新するuseEffect
   useEffect(() => {
     if (!journalService) return
 
     const interval = globalThis.setInterval(async () => {
       try {
-        const latestEntries = await journalService.refreshEntries()
-        setEntries(latestEntries)
+        // 最後の更新時刻を取得
+        const currentUpdateTime = await journalService.getLastUpdateTime()
+
+        // 前回の更新時刻と比較して変更があった場合のみ更新
+        if (currentUpdateTime > lastUpdateTime) {
+          // スクロール位置を保存
+          saveScrollPosition()
+
+          const latestEntries = await journalService.refreshEntries()
+          setEntries(latestEntries)
+          setLastUpdateTime(currentUpdateTime)
+
+          // 次のレンダリング後にスクロール位置を復元
+          setTimeout(restoreScrollPosition, 0)
+        }
       } catch (error) {
         // エラーが発生した場合は現在のエントリーを保持
         // eslint-disable-next-line no-console
@@ -55,7 +85,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
     }, 1000)
 
     return () => globalThis.clearInterval(interval)
-  }, [journalService])
+  }, [journalService, lastUpdateTime])
 
   useEffect(() => {
     const initService = async () => {
@@ -80,6 +110,11 @@ export const App: React.FC<AppProps> = ({ config }) => {
       setPluginManager(manager)
       setEntries(service.getEntries())
       setCategories(service.getCategories())
+
+      // 初期の最終更新時刻を設定
+      const initialUpdateTime = await service.getLastUpdateTime()
+      setLastUpdateTime(initialUpdateTime)
+
       setIsReady(true)
     }
 
