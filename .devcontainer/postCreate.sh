@@ -7,3 +7,4 @@ mise install
 
 npm install -g @anthropic-ai/claude-code
 echo 'alias claude="~/.claude/local/claude"' >> ~/.bashrc
+echo 'export PATH=~/.claude/local:$PATH' >> ~/.bashrc
