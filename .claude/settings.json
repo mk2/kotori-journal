@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "mcp__ide__executeCode",
+      "WebFetch(domain:github.com)",
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(npm:*)",
@@ -8,11 +10,13 @@
       "Bash(chmod:*)",
       "Bash(npx lint-staged:*)",
       "Bash(npx eslint:*)",
-      "WebFetch(domain:github.com)",
       "Bash(rg:*)",
-      "mcp__ide__executeCode",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(cp:*)",
+      "Bash(sed:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)"
     ],
-    "deny": ["Bash(git:*)"]
+    "deny": ["Bash(git add:*)", "Bash(git push:*)", "Bash(git fetch:*)"]
   }
 }

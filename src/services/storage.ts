@@ -196,6 +196,36 @@ export class StorageService {
     return `${hours}:${minutes}`
   }
 
+  async getLastUpdateTime(): Promise<number> {
+    const tempDir = path.join(this.dataPath, '.temp')
+
+    try {
+      await fs.access(tempDir)
+      const files = await fs.readdir(tempDir)
+      const jsonFiles = files.filter(file => file.endsWith('.json'))
+
+      if (jsonFiles.length === 0) {
+        return 0
+      }
+
+      let latestTime = 0
+
+      for (const file of jsonFiles) {
+        const filePath = path.join(tempDir, file)
+        const stats = await fs.stat(filePath)
+        const mtime = stats.mtime.getTime()
+
+        if (mtime > latestTime) {
+          latestTime = mtime
+        }
+      }
+
+      return latestTime
+    } catch {
+      return 0
+    }
+  }
+
   private extractMatches(content: string, keyword: string): string[] {
     const matches: string[] = []
     const lines = content.split('\n')
