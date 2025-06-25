@@ -29,10 +29,9 @@ class AutoContentProcessor {
 
     try {
       // 自動コンテンツ処理が有効かどうかをチェック
-      const result = await chrome.storage.local.get(['config'])
-      const config = result.config || {}
+      const result = await chrome.storage.local.get(['autoProcessingEnabled'])
 
-      if (!config.autoProcessingEnabled) {
+      if (!result.autoProcessingEnabled) {
         console.log('[AutoContentProcessor] Auto processing is disabled, skipping')
         return
       }
