@@ -155,3 +155,25 @@ Redmineのチケットの内容を下記のフォーマットで要約してく�
 {content}
 </チケット内容>
 ```
+
+### GitHubのOSSの要約
+
+#### URLパターン
+```
+https://github\.com/[\w-\.]+/[\w-\.]+
+```
+
+#### 処理プロンプト
+```
+GitHubで公開されているOSSの内容です。要約してください。
+
+<format>
+## 基本情報
+## 概要
+## トレンド
+</format>
+
+<content>
+{content}
+</content>
+```
