@@ -7,6 +7,7 @@ import { FileLogger } from '../utils/file-logger.js'
 import { ContentPatternManager } from '../models/content-pattern.js'
 import { ContentProcessor } from './content-processor.js'
 import { ContentProcessingRequest } from '../types/content-processing.js'
+import { TokenStorage } from './token-storage.js'
 
 interface BrowserHistoryEntry {
   url: string
@@ -42,6 +43,7 @@ interface HTTPServerOptions {
   logger?: FileLogger
   patternManager?: ContentPatternManager
   contentProcessor?: ContentProcessor
+  tokenStorage?: TokenStorage
 }
 
 export class HTTPServer {
@@ -53,6 +55,7 @@ export class HTTPServer {
   private logger?: FileLogger
   private patternManager?: ContentPatternManager
   private contentProcessor?: ContentProcessor
+  private tokenStorage?: TokenStorage
 
   constructor(journalService: JournalService, options: HTTPServerOptions = {}) {
     this.journalService = journalService
@@ -61,6 +64,7 @@ export class HTTPServer {
     this.logger = options.logger
     this.patternManager = options.patternManager
     this.contentProcessor = options.contentProcessor
+    this.tokenStorage = options.tokenStorage
     this.app = this.createApp()
   }
 
