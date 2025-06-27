@@ -4,6 +4,7 @@ import path from 'path'
 import { JournalService } from '../services/journal-service.js'
 import { HTTPServer } from '../services/http-server.js'
 import { FileLogger } from '../utils/file-logger.js'
+import { TokenStorage } from '../services/token-storage.js'
 
 async function startServer() {
   const dataPath =
@@ -15,18 +16,26 @@ async function startServer() {
   const logger = new FileLogger(dataPath)
   await logger.info('Starting kotori-journal HTTP server', { port, dataPath })
 
+  // Initialize token storage
+  const tokenStorage = new TokenStorage(dataPath)
+
   // Initialize services
   const journalService = new JournalService(dataPath)
   await journalService.initialize()
   await logger.info('JournalService initialized')
 
+  // Get or create auth token
+  const actualAuthToken = authToken || (await tokenStorage.getOrCreateToken())
+  await logger.info('Using auth token', { isNewToken: !authToken })
+
   // Create and start HTTP server
   const server = new HTTPServer(journalService, {
     port,
-    authToken,
+    authToken: actualAuthToken,
     logger,
     patternManager: journalService.getPatternManager(),
     contentProcessor: journalService.getContentProcessor(),
+    tokenStorage,
   })
 
   // Update config file with actual auth token
