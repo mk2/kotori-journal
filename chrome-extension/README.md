@@ -126,11 +126,13 @@ chrome-extension/
 ### Redmineのチケット要約
 
 #### URLパターン
+
 ```
 https://www\.redmine\.org/issues/.*
 ```
 
 #### 処理プロンプト
+
 ```
 Redmineのチケットの内容を下記のフォーマットで要約してください。
 
@@ -159,11 +161,13 @@ Redmineのチケットの内容を下記のフォーマットで要約してく�
 ### GitHubのOSSの要約
 
 #### URLパターン
+
 ```
 https://github\.com/[\w-\.]+/[\w-\.]+
 ```
 
 #### 処理プロンプト
+
 ```
 GitHubで公開されているOSSの内容です。要約してください。
 

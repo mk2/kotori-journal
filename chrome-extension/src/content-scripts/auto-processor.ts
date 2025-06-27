@@ -1,25 +1,217 @@
-import { ContentExtractor } from '../services/content-extractor'
+// Content extractor types
+interface ExtractedContent {
+  title: string
+  mainContent: string
+  metadata?: {
+    author?: string
+    publishDate?: string
+    description?: string
+  }
+}
+
+// Simple content extractor class
+class ContentExtractor {
+  extractPageContent(): ExtractedContent {
+    const title = this.extractTitle()
+    const mainContent = this.extractMainContent()
+    const metadata = this.extractMetadata()
+
+    return {
+      title,
+      mainContent,
+      metadata,
+    }
+  }
+
+  private extractTitle(): string {
+    const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content')
+    if (ogTitle) return ogTitle
+
+    return document.title || 'Untitled'
+  }
+
+  private extractMainContent(): string {
+    const contentSelectors = [
+      'article',
+      'main',
+      '[role="main"]',
+      '.main-content',
+      '.content',
+      '.post-content',
+      '.article-content',
+      '.entry-content',
+      '#main',
+      '#content',
+    ]
+
+    let content = ''
+
+    for (const selector of contentSelectors) {
+      const element = document.querySelector(selector)
+      if (element) {
+        content = this.extractTextFromElement(element)
+        if (content.length > 100) {
+          break
+        }
+      }
+    }
+
+    if (content.length < 100) {
+      content = this.extractTextFromElement(document.body)
+    }
+
+    return this.cleanContent(content)
+  }
+
+  private extractTextFromElement(element: Element): string {
+    const excludeSelectors = [
+      'script',
+      'style',
+      'nav',
+      'header',
+      'footer',
+      '.navigation',
+      '.sidebar',
+      '.ads',
+      '.advertisement',
+      '.social-media',
+      '.comments',
+      '.related-posts',
+      '[aria-hidden="true"]',
+    ]
+
+    const clone = element.cloneNode(true) as Element
+
+    excludeSelectors.forEach(selector => {
+      const elements = clone.querySelectorAll(selector)
+      elements.forEach(el => el.remove())
+    })
+
+    return clone.textContent || ''
+  }
+
+  private cleanContent(content: string): string {
+    return content
+      .replace(/\s+/g, ' ')
+      .replace(/\n\s*\n/g, '\n')
+      .trim()
+      .substring(0, 8000)
+  }
+
+  private extractMetadata(): { author?: string; publishDate?: string; description?: string } {
+    const metadata: { author?: string; publishDate?: string; description?: string } = {}
+
+    const authorSelectors = [
+      'meta[name="author"]',
+      'meta[property="article:author"]',
+      '.author',
+      '.byline',
+      '[rel="author"]',
+    ]
+
+    for (const selector of authorSelectors) {
+      const element = document.querySelector(selector)
+      if (element) {
+        const author = element.getAttribute('content') || element.textContent?.trim()
+        if (author) {
+          metadata.author = author
+          break
+        }
+      }
+    }
+
+    const dateSelectors = [
+      'meta[property="article:published_time"]',
+      'meta[name="date"]',
+      'time[datetime]',
+      '.published',
+      '.date',
+    ]
+
+    for (const selector of dateSelectors) {
+      const element = document.querySelector(selector)
+      if (element) {
+        const date =
+          element.getAttribute('content') ||
+          element.getAttribute('datetime') ||
+          element.textContent?.trim()
+        if (date) {
+          metadata.publishDate = date
+          break
+        }
+      }
+    }
+
+    const descriptionSelectors = ['meta[name="description"]', 'meta[property="og:description"]']
+
+    for (const selector of descriptionSelectors) {
+      const element = document.querySelector(selector)
+      if (element) {
+        const description = element.getAttribute('content')
+        if (description) {
+          metadata.description = description
+          break
+        }
+      }
+    }
+
+    return metadata
+  }
+}
+
+// Logger that sends to both console and remote via background script
+const logger = {
+  info: (message: string, data?: any) => {
+    console.log(`[AutoContentProcessor] ${message}`, data || '')
+    // Send to background script for remote logging
+    chrome.runtime
+      .sendMessage({
+        type: 'remote-log',
+        level: 'info',
+        logMessage: message,
+        data: data,
+      })
+      .catch(() => {
+        // Ignore errors if background script is not ready
+      })
+  },
+  error: (message: string, data?: any) => {
+    console.error(`[AutoContentProcessor] ${message}`, data || '')
+    // Send to background script for remote logging
+    chrome.runtime
+      .sendMessage({
+        type: 'remote-log',
+        level: 'error',
+        logMessage: message,
+        data: data,
+      })
+      .catch(() => {
+        // Ignore errors if background script is not ready
+      })
+  },
+}
 
 class AutoContentProcessor {
   private extractor: ContentExtractor
   private processed: boolean = false
 
   constructor() {
-    console.log('[AutoContentProcessor] Initializing auto-processor for URL:', window.location.href)
+    logger.info('Initializing auto-processor for URL:', {
+      url: window.location.href,
+    })
     this.extractor = new ContentExtractor()
     this.init()
   }
 
   private async init(): Promise<void> {
-    console.log('[AutoContentProcessor] Init called, document.readyState:', document.readyState)
-    // ページが完全に読み込まれてから処理を開始
+    logger.info('Init called', { readyState: document.readyState })
+
     if (document.readyState === 'loading') {
-      console.log('[AutoContentProcessor] Document still loading, waiting for DOMContentLoaded')
+      logger.info('Document still loading, waiting for DOMContentLoaded')
       document.addEventListener('DOMContentLoaded', () => this.processPage())
     } else {
-      // すでに読み込み完了している場合
-      console.log('[AutoContentProcessor] Document ready, scheduling processPage')
-      setTimeout(() => this.processPage(), 1000) // 少し待ってから実行
+      logger.info('Document ready, scheduling processPage')
+      setTimeout(() => this.processPage(), 1000)
     }
   }
 
@@ -28,28 +220,30 @@ class AutoContentProcessor {
     this.processed = true
 
     try {
-      // 自動コンテンツ処理が有効かどうかをチェック
       const result = await chrome.storage.local.get(['autoProcessingEnabled'])
 
       if (!result.autoProcessingEnabled) {
-        console.log('[AutoContentProcessor] Auto processing is disabled, skipping')
+        logger.info('Auto processing is disabled, skipping')
         return
       }
 
       const currentUrl = window.location.href
-      console.log('[AutoContentProcessor] Starting processPage for URL:', currentUrl)
+      logger.info('Starting processPage for URL:', { url: currentUrl })
 
-      // コンテンツを抽出
       const content = this.extractor.extractPageContent()
 
       if (content.mainContent.length < 50) {
-        console.log('[AutoContentProcessor] Content too short, skipping')
+        logger.info('Content too short, skipping', {
+          contentLength: content.mainContent.length,
+        })
         return
       }
 
-      console.log('[AutoContentProcessor] Extracted content, sending to server for auto-processing')
+      logger.info('Extracted content, sending to server for auto-processing', {
+        contentLength: content.mainContent.length,
+        title: content.title,
+      })
 
-      // サーバーにコンテンツを送信して自動処理を依頼
       chrome.runtime.sendMessage({
         type: 'auto-process-content',
         data: {
@@ -60,12 +254,14 @@ class AutoContentProcessor {
         },
       })
     } catch (error) {
-      console.error('[AutoContentProcessor] Error in processPage:', error)
+      logger.error('Error in processPage:', {
+        error: error instanceof Error ? error.message : error,
+      })
     }
   }
 }
 
-// ページごとに1つのインスタンスを作成
-console.log('[AutoContentProcessor] Creating AutoContentProcessor instance')
+// Create instance
+logger.info('Creating AutoContentProcessor instance')
 new AutoContentProcessor()
-console.log('[AutoContentProcessor] AutoContentProcessor instance created')
+logger.info('AutoContentProcessor instance created')

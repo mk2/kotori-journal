@@ -1,20 +1,21 @@
 import { PageTracker } from './services/page-tracker'
 import { DataSender } from './services/data-sender'
 import { ContentProcessingService } from './services/content-processing-service'
+import { remoteLogger } from './services/remote-logger'
 
 // Initialize services
-console.log('[Background] Initializing services...')
+remoteLogger.info('[Background] Initializing services...')
 const dataSender = new DataSender()
 const pageTracker = new PageTracker(dataSender)
 const contentProcessingService = new ContentProcessingService()
-console.log('[Background] Services initialized')
+remoteLogger.info('[Background] Services initialized')
 
 // Check active tabs immediately
 setTimeout(checkAndStartTrackingActiveTabs, 1000)
 
 // Extension lifecycle
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('[Background] Kotori Journal Browser History extension installed')
+  remoteLogger.info('[Background] Kotori Journal Browser History extension installed')
 
   // Set default configuration
   chrome.storage.local.get(
@@ -27,7 +28,7 @@ chrome.runtime.onInstalled.addListener(() => {
         autoProcessingEnabled: result.autoProcessingEnabled !== false,
       }
 
-      console.log('[Background] Setting default config:', config)
+      remoteLogger.info('[Background] Setting default config:', config)
       chrome.storage.local.set(config)
     }
   )
@@ -35,38 +36,44 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Start tracking current active tab on startup
 chrome.runtime.onStartup.addListener(async () => {
-  console.log('[Background] Extension startup, checking active tabs')
+  remoteLogger.info('[Background] Extension startup, checking active tabs')
   await checkAndStartTrackingActiveTabs()
 })
 
 // Also check when the extension is installed/enabled
 chrome.runtime.onInstalled.addListener(async () => {
-  console.log('[Background] Extension installed/enabled, checking active tabs')
+  remoteLogger.info('[Background] Extension installed/enabled, checking active tabs')
   await checkAndStartTrackingActiveTabs()
 })
 
 async function checkAndStartTrackingActiveTabs() {
   try {
     const tabs = await chrome.tabs.query({ active: true })
-    console.log('[Background] Found active tabs:', tabs.length)
+    remoteLogger.info('[Background] Found active tabs:', { count: tabs.length })
     for (const tab of tabs) {
       if (tab.id && tab.url) {
-        console.log('[Background] Active tab:', { id: tab.id, url: tab.url, title: tab.title })
+        remoteLogger.info('[Background] Active tab:', {
+          id: tab.id,
+          url: tab.url,
+          title: tab.title,
+        })
         // Manually trigger tracking if it's a valid URL
         if (tab.url.startsWith('http')) {
-          console.log('[Background] Starting manual tracking for active tab')
+          remoteLogger.info('[Background] Starting manual tracking for active tab')
           pageTracker.startTracking(tab.id, tab.url, tab.title || 'Untitled')
         }
       }
     }
   } catch (error) {
-    console.error('[Background] Error checking active tabs:', error)
+    remoteLogger.error('[Background] Error checking active tabs:', {
+      error: error instanceof Error ? error.message : error,
+    })
   }
 }
 
 // Handle messages from popup or content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('[Background] Received message:', message.type, message)
+  remoteLogger.info('[Background] Received message:', { type: message.type, message })
 
   if (message.type === 'get-status') {
     chrome.storage.local.get(
@@ -76,7 +83,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           config,
           activeVisits: pageTracker.getActiveVisitsCount(),
         }
-        console.log('[Background] Sending status:', status)
+        remoteLogger.info('[Background] Sending status:', status)
         sendResponse(status)
       }
     )
@@ -84,28 +91,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'update-config') {
-    console.log('[Background] Updating config:', message.config)
+    remoteLogger.info('[Background] Updating config:', message.config)
     chrome.storage.local.set(message.config, () => {
-      console.log('[Background] Config updated')
+      remoteLogger.info('[Background] Config updated')
       sendResponse({ success: true })
     })
     return true
   }
 
   if (message.type === 'ogp-data') {
-    console.log('[Background] Received OGP data from content script:', message.data)
+    remoteLogger.info('[Background] Received OGP data from content script:', message.data)
     // This is handled by PageTracker
   }
 
+  if (message.type === 'remote-log') {
+    // Forward log messages from content scripts to remote logger
+    const { level, logMessage, data } = message
+    remoteLogger[level](`[ContentScript] ${logMessage}`, data)
+    return
+  }
+
   if (message.type === 'auto-process-content') {
-    console.log('[Background] Received auto-process request for URL:', message.data?.url)
-    console.log('[Background] Content length:', message.data?.content?.length)
+    remoteLogger.info('[Background] Received auto-process request', {
+      url: message.data?.url,
+      contentLength: message.data?.content?.length,
+    })
 
     // データを直接サーバーに送信して自動処理を依頼
     chrome.storage.local.get(
       ['serverUrl', 'authToken', 'enabled', 'autoProcessingEnabled'],
       async config => {
-        console.log('[Background] Current config:', {
+        remoteLogger.info('[Background] Current config:', {
           enabled: config.enabled,
           autoProcessingEnabled: config.autoProcessingEnabled,
           hasAuthToken: !!config.authToken,
@@ -113,22 +129,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         })
 
         if (!config.enabled) {
-          console.log('[Background] Extension disabled, skipping auto-processing')
+          remoteLogger.info('[Background] Extension disabled, skipping auto-processing')
           return
         }
 
         if (!config.autoProcessingEnabled) {
-          console.log('[Background] Auto-processing disabled, skipping')
+          remoteLogger.info('[Background] Auto-processing disabled, skipping')
           return
         }
 
         if (!config.authToken) {
-          console.log('[Background] No auth token configured, skipping auto-processing')
+          remoteLogger.info('[Background] No auth token configured, skipping auto-processing')
           return
         }
 
         try {
-          console.log('[Background] Sending auto-processing request to server')
+          remoteLogger.info('[Background] Sending auto-processing request to server')
           const response = await fetch(`${config.serverUrl}/api/auto-content-processing`, {
             method: 'POST',
             headers: {
@@ -139,20 +155,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           })
 
           const result = await response.json()
-          console.log('[Background] Server response:', result)
+          remoteLogger.info('[Background] Server response:', result)
 
           if (response.ok && result.success) {
-            console.log(
-              '[Background] Auto-processing successful:',
-              result.processed,
-              'patterns processed'
-            )
+            remoteLogger.info('[Background] Auto-processing successful:', {
+              processed: result.processed,
+              total: result.total,
+            })
             // Optional: Show notification or update badge
           } else {
-            console.log('[Background] Auto-processing failed or no patterns matched:', result)
+            remoteLogger.warn('[Background] Auto-processing failed or no patterns matched:', result)
           }
         } catch (error) {
-          console.error('[Background] Error in auto-processing:', error)
+          remoteLogger.error('[Background] Error in auto-processing:', {
+            error: error instanceof Error ? error.message : error,
+          })
         }
       }
     )

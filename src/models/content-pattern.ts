@@ -65,6 +65,7 @@ export class ContentPatternManager {
         const regex = new RegExp(pattern.urlPattern)
         return regex.test(url)
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(`Invalid regex pattern: ${pattern.urlPattern}`, error)
         return false
       }
