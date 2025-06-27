@@ -39,6 +39,7 @@
   "license": "ISC",
   "scripts": {
     "dev": "tsx src/cli.tsx",
+    "server": "tsx src/cli.tsx server",
     "watch": "tsx watch src/cli.tsx",
     "build": "tsup",
     "test": "vitest run",
