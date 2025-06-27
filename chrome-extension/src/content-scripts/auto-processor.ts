@@ -194,13 +194,16 @@ const autoProcessorLogger = {
 class AutoContentProcessor {
   private extractor: ContentExtractor
   private processed: boolean = false
+  private currentUrl: string
 
   constructor() {
+    this.currentUrl = window.location.href
     autoProcessorLogger.info('Initializing auto-processor for URL:', {
-      url: window.location.href,
+      url: this.currentUrl,
     })
     this.extractor = new ContentExtractor()
     this.init()
+    this.setupUrlChangeObserver()
   }
 
   private async init(): Promise<void> {
@@ -213,6 +216,28 @@ class AutoContentProcessor {
       autoProcessorLogger.info('Document ready, scheduling processPage')
       setTimeout(() => this.processPage(), 1000)
     }
+  }
+
+  private setupUrlChangeObserver(): void {
+    // URL変更を監視してprocessedフラグをリセット
+    const observer = new MutationObserver(() => {
+      if (window.location.href !== this.currentUrl) {
+        autoProcessorLogger.info('URL changed in auto-processor', {
+          from: this.currentUrl,
+          to: window.location.href,
+        })
+        this.currentUrl = window.location.href
+        this.processed = false // 重要: processedフラグをリセット
+
+        // 新しいページでの処理を少し遅らせて実行
+        setTimeout(() => this.processPage(), 2000)
+      }
+    })
+
+    observer.observe(document, {
+      childList: true,
+      subtree: true,
+    })
   }
 
   private async processPage(): Promise<void> {

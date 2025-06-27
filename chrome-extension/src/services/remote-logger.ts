@@ -25,7 +25,7 @@ export class RemoteLogger {
     })
 
     // Process queue periodically
-    setInterval(() => this.processQueue(), 1000)
+    globalThis.setInterval(() => this.processQueue(), 1000)
   }
 
   log(level: LogLevel, message: string, data?: any) {

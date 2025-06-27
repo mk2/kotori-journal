@@ -31,6 +31,8 @@ export class ContentProcessor {
   }
 
   async processContent(request: ContentProcessingRequest): Promise<ContentProcessingResponse> {
+    let processingEntryId: string | undefined
+
     try {
       await this.logger?.info('Processing content request', {
         url: request.url,
@@ -58,45 +60,87 @@ export class ContentProcessor {
         return { success: false, error }
       }
 
+      // 処理開始時のジャーナルエントリを作成
+      const startContent = `自動コンテンツ処理を開始: ${request.title}\n\nURL: ${request.url}\nパターン: ${pattern.name}\n処理中...`
+      const processingEntry = await this.journalService.addEntry(
+        startContent,
+        '自動処理',
+        'entry',
+        {
+          url: request.url,
+          title: request.title,
+          patternId: request.patternId,
+          patternName: pattern.name,
+          status: 'processing',
+          startedAt: new Date().toISOString(),
+        }
+      )
+      processingEntryId = processingEntry.id
+
       // プロンプトを構築
       const fullPrompt = this.buildPrompt(pattern.prompt, request)
 
       // Claude AIで処理（自動処理なのでトリガーチェックをスキップ）
       const processedContent = await this.claudeAI.processAIRequest(fullPrompt, [], true)
 
-      // ジャーナルエントリを作成
-      const entryContent = `Auto-processed content from ${request.title} (${request.url})\n\n${processedContent}`
-      const journalEntry = await this.journalService.addEntry(
-        entryContent,
+      // 処理完了時のジャーナルエントリを作成
+      const completedContent = `自動コンテンツ処理完了: ${request.title}\n\n${processedContent}`
+      const completedEntry = await this.journalService.addEntry(
+        completedContent,
         'AI処理コンテンツ',
         'entry',
         {
           url: request.url,
-          originalTitle: request.title,
+          title: request.title,
           patternId: request.patternId,
           patternName: pattern.name,
+          status: 'completed',
+          startedAt: processingEntry.metadata?.startedAt,
+          completedAt: new Date().toISOString(),
+          processingEntryId: processingEntryId,
           processedBy: 'claude-ai',
-          processedAt: new Date().toISOString(),
         }
       )
 
       await this.logger?.info('Content processed successfully', {
         url: request.url,
-        entryId: journalEntry.id,
+        processingEntryId: processingEntryId,
+        completedEntryId: completedEntry.id,
         patternName: pattern.name,
       })
 
       return {
         success: true,
-        entryId: journalEntry.id,
+        entryId: completedEntry.id,
         processedContent,
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+      // エラー時は処理開始エントリがあれば更新
+      if (processingEntryId) {
+        try {
+          const errorContent = `自動コンテンツ処理エラー: ${request.title}\n\nエラー: ${errorMessage}`
+          await this.journalService.addEntry(errorContent, '自動処理エラー', 'entry', {
+            url: request.url,
+            title: request.title,
+            patternId: request.patternId,
+            patternName: this.patternManager.getPatternById(request.patternId)?.name,
+            status: 'error',
+            error: errorMessage,
+            processingEntryId: processingEntryId,
+            errorAt: new Date().toISOString(),
+          })
+        } catch (journalError) {
+          await this.logger?.error('Failed to create error journal entry', { journalError })
+        }
+      }
+
       await this.logger?.error('Content processing failed', {
         error: errorMessage,
         url: request.url,
         patternId: request.patternId,
+        processingEntryId,
       })
 
       return {
