@@ -162,7 +162,7 @@ class ContentExtractor {
 // Logger that sends to both console and remote via background script
 const autoProcessorLogger = {
   info: (message: string, data?: any) => {
-    console.log(`[AutoContentProcessor] ${message}`, data || '')
+    // コンソール出力は無効化
     // Send to background script for remote logging
     chrome.runtime
       .sendMessage({
@@ -176,7 +176,7 @@ const autoProcessorLogger = {
       })
   },
   error: (message: string, data?: any) => {
-    console.error(`[AutoContentProcessor] ${message}`, data || '')
+    // コンソール出力は無効化
     // Send to background script for remote logging
     chrome.runtime
       .sendMessage({

@@ -17,9 +17,9 @@ class PatternManager {
     try {
       const response = await chrome.runtime.sendMessage({ type: 'get-patterns' })
       this.patterns = response.patterns || []
-      console.log('[PatternManager] Loaded patterns:', this.patterns.length)
-    } catch (error) {
-      console.error('[PatternManager] Failed to load patterns:', error)
+      // コンソール出力は無効化
+    } catch {
+      // コンソール出力は無効化
       this.showStatus('パターンの読み込みに失敗しました', 'error')
       this.patterns = []
     }
@@ -154,8 +154,8 @@ class PatternManager {
       } else {
         this.showStatus('パターンの削除に失敗しました', 'error')
       }
-    } catch (error) {
-      console.error('[PatternManager] Failed to delete pattern:', error)
+    } catch {
+      // コンソール出力は無効化
       this.showStatus('パターンの削除でエラーが発生しました', 'error')
     }
   }
@@ -334,8 +334,8 @@ class PatternManager {
       await this.loadPatterns()
       this.renderPatterns()
       this.closeModal()
-    } catch (error) {
-      console.error('[PatternManager] Failed to save pattern:', error)
+    } catch {
+      // コンソール出力は無効化
       this.showStatus('パターンの保存でエラーが発生しました', 'error')
     } finally {
       // Hide loading

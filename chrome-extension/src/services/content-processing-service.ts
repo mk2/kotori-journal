@@ -11,7 +11,7 @@ export class ContentProcessingService {
     try {
       const config = await this.getConfig()
       if (!config.enabled || !config.authToken) {
-        console.log('[ContentProcessingService] Extension disabled or no auth token')
+        // コンソール出力は無効化
         return []
       }
 
@@ -24,17 +24,14 @@ export class ContentProcessingService {
       })
 
       if (!response.ok) {
-        console.error(
-          '[ContentProcessingService] Failed to get matching patterns:',
-          response.status
-        )
+        // コンソール出力は無効化
         return []
       }
 
       const result = await response.json()
       return result.patterns || []
-    } catch (error) {
-      console.error('[ContentProcessingService] Error getting matching patterns:', error)
+    } catch {
+      // コンソール出力は無効化
       return []
     }
   }
@@ -48,7 +45,7 @@ export class ContentProcessingService {
     try {
       const config = await this.getConfig()
       if (!config.enabled || !config.authToken) {
-        console.log('[ContentProcessingService] Extension disabled or no auth token')
+        // コンソール出力は無効化
         return null
       }
 
@@ -59,11 +56,7 @@ export class ContentProcessingService {
         patternId,
       }
 
-      console.log('[ContentProcessingService] Processing content:', {
-        url,
-        patternId,
-        contentLength: content.mainContent.length,
-      })
+      // コンソール出力は無効化
 
       const response = await fetch(`${config.serverUrl}/api/content-processing`, {
         method: 'POST',
@@ -77,14 +70,14 @@ export class ContentProcessingService {
       const result = await response.json()
 
       if (response.ok) {
-        console.log('[ContentProcessingService] Content processed successfully:', result)
+        // コンソール出力は無効化
         return result
       } else {
-        console.error('[ContentProcessingService] Content processing failed:', result)
+        // コンソール出力は無効化
         return result
       }
     } catch (error) {
-      console.error('[ContentProcessingService] Error processing content:', error)
+      // コンソール出力は無効化
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -107,14 +100,14 @@ export class ContentProcessingService {
       })
 
       if (!response.ok) {
-        console.error('[ContentProcessingService] Failed to get patterns:', response.status)
+        // コンソール出力は無効化
         return []
       }
 
       const result = await response.json()
       return result.patterns || []
-    } catch (error) {
-      console.error('[ContentProcessingService] Error getting patterns:', error)
+    } catch {
+      // コンソール出力は無効化
       return []
     }
   }
@@ -141,14 +134,14 @@ export class ContentProcessingService {
       })
 
       if (!response.ok) {
-        console.error('[ContentProcessingService] Failed to create pattern:', response.status)
+        // コンソール出力は無効化
         return null
       }
 
       const result = await response.json()
       return result.pattern
-    } catch (error) {
-      console.error('[ContentProcessingService] Error creating pattern:', error)
+    } catch {
+      // コンソール出力は無効化
       return null
     }
   }
@@ -170,8 +163,8 @@ export class ContentProcessingService {
       })
 
       return response.ok
-    } catch (error) {
-      console.error('[ContentProcessingService] Error updating pattern:', error)
+    } catch {
+      // コンソール出力は無効化
       return false
     }
   }
@@ -191,8 +184,8 @@ export class ContentProcessingService {
       })
 
       return response.ok
-    } catch (error) {
-      console.error('[ContentProcessingService] Error deleting pattern:', error)
+    } catch {
+      // コンソール出力は無効化
       return false
     }
   }

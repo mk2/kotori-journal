@@ -18,51 +18,51 @@ export class PageTracker {
   private setupListeners(): void {
     // Tab activated
     chrome.tabs.onActivated.addListener(async activeInfo => {
-      console.log(`[PageTracker] Tab activated: ${activeInfo.tabId}`)
+      // コンソール出力は無効化
       try {
         const tab = await chrome.tabs.get(activeInfo.tabId)
-        console.log(`[PageTracker] Tab info:`, { id: tab.id, url: tab.url, title: tab.title })
+        // コンソール出力は無効化
         if (tab.url && this.isValidUrl(tab.url)) {
           this.startTracking(tab.id!, tab.url, tab.title || 'Untitled')
         } else {
-          console.log(`[PageTracker] Invalid URL: ${tab.url}`)
+          // コンソール出力は無効化
         }
-      } catch (error) {
-        console.error(`[PageTracker] Error getting tab info:`, error)
+      } catch {
+        // コンソール出力は無効化
       }
     })
 
     // Tab removed
     chrome.tabs.onRemoved.addListener(async tabId => {
-      console.log(`[PageTracker] Tab removed: ${tabId}`)
+      // コンソール出力は無効化
       await this.stopTracking(tabId)
     })
 
     // Tab updated (URL change)
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       if (changeInfo.url) {
-        console.log(`[PageTracker] Tab ${tabId} URL changed to: ${changeInfo.url}`)
+        // コンソール出力は無効化
         if (tab.url && this.isValidUrl(tab.url)) {
           await this.stopTracking(tabId)
           this.startTracking(tabId, tab.url, tab.title || 'Untitled')
         } else {
-          console.log(`[PageTracker] Invalid URL: ${tab.url}`)
+          // コンソール出力は無効化
         }
       }
     })
 
     // Listen for OGP data from content script
     chrome.runtime.onMessage.addListener((message, sender) => {
-      console.log('[PageTracker] Received message:', message.type, message)
+      // コンソール出力は無効化
       if (message.type === 'ogp-data' && sender.tab?.id) {
-        console.log('[PageTracker] Updating OGP data for tab', sender.tab.id, message.data)
+        // コンソール出力は無効化
         this.updateOGPData(sender.tab.id, message.data)
       }
     })
   }
 
   startTracking(tabId: number, url: string, title: string): void {
-    console.log(`[PageTracker] Starting tracking for tab ${tabId}: ${title} (${url})`)
+    // コンソール出力は無効化
 
     const visit: PageVisit = {
       tabId,
@@ -72,7 +72,7 @@ export class PageTracker {
     }
 
     this.activeVisits.set(tabId, visit)
-    console.log(`[PageTracker] Active visits: ${this.activeVisits.size}`)
+    // コンソール出力は無効化
 
     // Immediately create journal entry
     this.createJournalEntry(tabId)
@@ -81,7 +81,7 @@ export class PageTracker {
   async stopTracking(tabId: number): Promise<(PageVisit & { duration: number }) | undefined> {
     const visit = this.activeVisits.get(tabId)
     if (!visit) {
-      console.log(`[PageTracker] No active visit found for tab ${tabId}`)
+      // コンソール出力は無効化
       return undefined
     }
 
@@ -90,9 +90,7 @@ export class PageTracker {
 
     // Calculate duration in seconds
     const duration = Math.round((visit.endTime - visit.startTime) / 1000)
-    console.log(
-      `[PageTracker] Stopped tracking tab ${tabId}: ${visit.title}, duration: ${duration}s`
-    )
+    // コンソール出力は無効化
 
     // If we have an entryId, update the existing entry with duration
     if (visit.entryId && duration > 0) {
@@ -101,20 +99,18 @@ export class PageTracker {
         duration,
       }
 
-      console.log(`[PageTracker] Updating entry with duration:`, update)
+      // コンソール出力は無効化
       const success = await this.dataSender.update(update)
 
       if (success) {
-        console.log(
-          `[PageTracker] Successfully updated entry ${visit.entryId} with duration ${duration}s`
-        )
+        // コンソール出力は無効化
       } else {
-        console.error(`[PageTracker] Failed to update entry ${visit.entryId} with duration`)
+        // コンソール出力は無効化
       }
     } else if (!visit.entryId) {
-      console.log(`[PageTracker] No entryId found for tab ${tabId}, entry was not created`)
+      // コンソール出力は無効化
     } else {
-      console.log(`[PageTracker] Duration too short (${duration}s), not updating`)
+      // コンソール出力は無効化
     }
 
     return { ...visit, duration }
@@ -123,7 +119,7 @@ export class PageTracker {
   updateOGPData(tabId: number, ogpData: OGPData): void {
     const visit = this.activeVisits.get(tabId)
     if (visit) {
-      console.log(`[PageTracker] Updated OGP data for tab ${tabId}:`, ogpData)
+      // コンソール出力は無効化
       visit.ogp = ogpData
 
       // If we haven't created the journal entry yet, do it now with OGP data
@@ -131,7 +127,7 @@ export class PageTracker {
         this.createJournalEntry(tabId)
       }
     } else {
-      console.log(`[PageTracker] No active visit found for tab ${tabId} when updating OGP data`)
+      // コンソール出力は無効化
     }
   }
 
@@ -148,14 +144,14 @@ export class PageTracker {
       ogp: visit.ogp,
     }
 
-    console.log(`[PageTracker] Creating journal entry for tab ${tabId}:`, createEntry)
+    // コンソール出力は無効化
     const entryId = await this.dataSender.create(createEntry)
 
     if (entryId) {
       visit.entryId = entryId
-      console.log(`[PageTracker] Journal entry created with ID: ${entryId}`)
+      // コンソール出力は無効化
     } else {
-      console.error(`[PageTracker] Failed to create journal entry for tab ${tabId}`)
+      // コンソール出力は無効化
     }
   }
 

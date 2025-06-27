@@ -36,9 +36,7 @@ export class RemoteLogger {
       timestamp: Date.now(),
     })
 
-    // Also log to console
-    const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'
-    console[consoleMethod](`[RemoteLogger] ${message}`, data || '')
+    // Chrome拡張ではコンソールログを出力しない
   }
 
   error(message: string, data?: any) {
@@ -78,10 +76,10 @@ export class RemoteLogger {
             },
             body: JSON.stringify(entry),
           })
-        } catch (error) {
+        } catch {
           // If sending fails, put it back in the queue
           this.queue.unshift(entry)
-          console.error('[RemoteLogger] Failed to send log:', error)
+          // コンソール出力は無効化
           break
         }
       }

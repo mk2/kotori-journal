@@ -13,28 +13,21 @@ export class DataSender {
 
   async sendComplete(entry: BrowserHistoryEntry): Promise<void> {
     try {
-      console.log(`[DataSender] Getting config...`)
+      // コンソール出力は無効化
       const config = await this.getConfig()
-      console.log(`[DataSender] Config:`, {
-        serverUrl: config.serverUrl,
-        enabled: config.enabled,
-        hasToken: !!config.authToken,
-      })
+      // コンソール出力は無効化
 
       if (!config.enabled) {
-        console.log(`[DataSender] Extension disabled, not sending`)
+        // コンソール出力は無効化
         return
       }
 
       if (!config.authToken) {
-        console.log(`[DataSender] No auth token, not sending`)
+        // コンソール出力は無効化
         return
       }
 
-      console.log(
-        `[DataSender] Sending complete entry to ${config.serverUrl}/api/browser-history:`,
-        entry
-      )
+      // コンソール出力は無効化
       const response = await fetch(`${config.serverUrl}/api/browser-history`, {
         method: 'POST',
         headers: {
@@ -44,45 +37,38 @@ export class DataSender {
         body: JSON.stringify(entry),
       })
 
-      console.log(`[DataSender] Response status: ${response.status}`)
+      // コンソール出力は無効化
       if (!response.ok) {
         const errorText = await response.text()
-        console.error(`[DataSender] Server error response:`, errorText)
+        // コンソール出力は無効化
         throw new Error(`Server responded with ${response.status}: ${errorText}`)
       }
 
-      const result = await response.json()
-      console.log('[DataSender] Browser history sent successfully:', result)
-    } catch (error) {
-      console.error('[DataSender] Failed to send browser history:', error)
+      await response.json() // レスポンスを消費するが変数には保存しない
+      // コンソール出力は無効化
+    } catch {
+      // コンソール出力は無効化
       // TODO: Implement retry logic
     }
   }
 
   async create(entry: BrowserHistoryCreateEntry): Promise<string | null> {
     try {
-      console.log(`[DataSender] Getting config for create...`)
+      // コンソール出力は無効化
       const config = await this.getConfig()
-      console.log(`[DataSender] Config:`, {
-        serverUrl: config.serverUrl,
-        enabled: config.enabled,
-        hasToken: !!config.authToken,
-      })
+      // コンソール出力は無効化
 
       if (!config.enabled) {
-        console.log(`[DataSender] Extension disabled, not creating`)
+        // コンソール出力は無効化
         return null
       }
 
       if (!config.authToken) {
-        console.log(`[DataSender] No auth token, not creating`)
+        // コンソール出力は無効化
         return null
       }
 
-      console.log(
-        `[DataSender] Creating entry at ${config.serverUrl}/api/browser-history/create:`,
-        entry
-      )
+      // コンソール出力は無効化
       const response = await fetch(`${config.serverUrl}/api/browser-history/create`, {
         method: 'POST',
         headers: {
@@ -92,36 +78,33 @@ export class DataSender {
         body: JSON.stringify(entry),
       })
 
-      console.log(`[DataSender] Create response status: ${response.status}`)
+      // コンソール出力は無効化
       if (!response.ok) {
         const errorText = await response.text()
-        console.error(`[DataSender] Create server error response:`, errorText)
+        // コンソール出力は無効化
         throw new Error(`Server responded with ${response.status}: ${errorText}`)
       }
 
       const result = await response.json()
-      console.log('[DataSender] Entry created successfully:', result)
+      // コンソール出力は無効化
       return result.entry?.id || null
-    } catch (error) {
-      console.error('[DataSender] Failed to create entry:', error)
+    } catch {
+      // コンソール出力は無効化
       return null
     }
   }
 
   async update(update: BrowserHistoryUpdateEntry): Promise<boolean> {
     try {
-      console.log(`[DataSender] Getting config for update...`)
+      // コンソール出力は無効化
       const config = await this.getConfig()
 
       if (!config.enabled || !config.authToken) {
-        console.log(`[DataSender] Extension disabled or no auth token, not updating`)
+        // コンソール出力は無効化
         return false
       }
 
-      console.log(
-        `[DataSender] Updating entry at ${config.serverUrl}/api/browser-history/update:`,
-        update
-      )
+      // コンソール出力は無効化
       const response = await fetch(`${config.serverUrl}/api/browser-history/update`, {
         method: 'PATCH',
         headers: {
@@ -131,18 +114,18 @@ export class DataSender {
         body: JSON.stringify(update),
       })
 
-      console.log(`[DataSender] Update response status: ${response.status}`)
+      // コンソール出力は無効化
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`[DataSender] Update server error response:`, errorText)
+        await response.text() // エラーテキストを読み取るが変数には保存しない
+        // コンソール出力は無効化
         return false
       }
 
       const result = await response.json()
-      console.log('[DataSender] Entry updated successfully:', result)
+      // コンソール出力は無効化
       return result.success
-    } catch (error) {
-      console.error('[DataSender] Failed to update entry:', error)
+    } catch {
+      // コンソール出力は無効化
       return false
     }
   }

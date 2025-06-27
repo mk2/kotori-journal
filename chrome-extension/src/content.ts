@@ -93,7 +93,7 @@ class OGPExtractor {
 // Logger that sends to both console and remote via background script
 const contentLogger = {
   info: (message: string, data?: any) => {
-    console.log(`[Content] ${message}`, data || '')
+    // コンソール出力は無効化
     // Send to background script for remote logging
     chrome.runtime
       .sendMessage({
@@ -107,7 +107,7 @@ const contentLogger = {
       })
   },
   error: (message: string, data?: any) => {
-    console.error(`[Content] ${message}`, data || '')
+    // コンソール出力は無効化
     // Send to background script for remote logging
     chrome.runtime
       .sendMessage({

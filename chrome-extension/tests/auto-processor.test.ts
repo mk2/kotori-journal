@@ -63,7 +63,7 @@ describe('AutoContentProcessor URL変更処理', () => {
   })
 
   it('同じURL内の変更では処理がスキップされる', () => {
-    let currentUrl = 'https://example.com/page1'
+    const currentUrl = 'https://example.com/page1'
     let processed = false
 
     // 最初の処理

@@ -324,8 +324,6 @@ describe('DataSender', () => {
 
     vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'))
 
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
     const entry: BrowserHistoryEntry = {
       url: 'https://example.com',
       title: 'Example Page',
@@ -333,13 +331,7 @@ describe('DataSender', () => {
       duration: 30,
     }
 
-    await dataSender.send(entry)
-
-    expect(consoleSpy).toHaveBeenCalledWith(
-      '[DataSender] Failed to send browser history:',
-      expect.any(Error)
-    )
-
-    consoleSpy.mockRestore()
+    // The method should not throw even when fetch fails
+    await expect(dataSender.send(entry)).resolves.not.toThrow()
   })
 })
