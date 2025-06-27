@@ -25,7 +25,6 @@ export class RemoteLogger {
     })
 
     // Process queue periodically
-    // eslint-disable-next-line no-undef
     setInterval(() => this.processQueue(), 1000)
   }
 

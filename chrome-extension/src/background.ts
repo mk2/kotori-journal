@@ -107,7 +107,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'remote-log') {
     // Forward log messages from content scripts to remote logger
     const { level, logMessage, data } = message
-    remoteLogger[level](`[ContentScript] ${logMessage}`, data)
+    if (level === 'info') {
+      remoteLogger.info(`[ContentScript] ${logMessage}`, data)
+    } else if (level === 'error') {
+      remoteLogger.error(`[ContentScript] ${logMessage}`, data)
+    } else if (level === 'warn') {
+      remoteLogger.warn(`[ContentScript] ${logMessage}`, data)
+    } else if (level === 'debug') {
+      remoteLogger.debug(`[ContentScript] ${logMessage}`, data)
+    }
     return
   }
 

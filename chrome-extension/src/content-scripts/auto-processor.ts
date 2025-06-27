@@ -160,7 +160,7 @@ class ContentExtractor {
 }
 
 // Logger that sends to both console and remote via background script
-const logger = {
+const autoProcessorLogger = {
   info: (message: string, data?: any) => {
     console.log(`[AutoContentProcessor] ${message}`, data || '')
     // Send to background script for remote logging
@@ -196,7 +196,7 @@ class AutoContentProcessor {
   private processed: boolean = false
 
   constructor() {
-    logger.info('Initializing auto-processor for URL:', {
+    autoProcessorLogger.info('Initializing auto-processor for URL:', {
       url: window.location.href,
     })
     this.extractor = new ContentExtractor()
@@ -204,13 +204,13 @@ class AutoContentProcessor {
   }
 
   private async init(): Promise<void> {
-    logger.info('Init called', { readyState: document.readyState })
+    autoProcessorLogger.info('Init called', { readyState: document.readyState })
 
     if (document.readyState === 'loading') {
-      logger.info('Document still loading, waiting for DOMContentLoaded')
+      autoProcessorLogger.info('Document still loading, waiting for DOMContentLoaded')
       document.addEventListener('DOMContentLoaded', () => this.processPage())
     } else {
-      logger.info('Document ready, scheduling processPage')
+      autoProcessorLogger.info('Document ready, scheduling processPage')
       setTimeout(() => this.processPage(), 1000)
     }
   }
@@ -223,23 +223,23 @@ class AutoContentProcessor {
       const result = await chrome.storage.local.get(['autoProcessingEnabled'])
 
       if (!result.autoProcessingEnabled) {
-        logger.info('Auto processing is disabled, skipping')
+        autoProcessorLogger.info('Auto processing is disabled, skipping')
         return
       }
 
       const currentUrl = window.location.href
-      logger.info('Starting processPage for URL:', { url: currentUrl })
+      autoProcessorLogger.info('Starting processPage for URL:', { url: currentUrl })
 
       const content = this.extractor.extractPageContent()
 
       if (content.mainContent.length < 50) {
-        logger.info('Content too short, skipping', {
+        autoProcessorLogger.info('Content too short, skipping', {
           contentLength: content.mainContent.length,
         })
         return
       }
 
-      logger.info('Extracted content, sending to server for auto-processing', {
+      autoProcessorLogger.info('Extracted content, sending to server for auto-processing', {
         contentLength: content.mainContent.length,
         title: content.title,
       })
@@ -254,7 +254,7 @@ class AutoContentProcessor {
         },
       })
     } catch (error) {
-      logger.error('Error in processPage:', {
+      autoProcessorLogger.error('Error in processPage:', {
         error: error instanceof Error ? error.message : error,
       })
     }
@@ -262,6 +262,6 @@ class AutoContentProcessor {
 }
 
 // Create instance
-logger.info('Creating AutoContentProcessor instance')
+autoProcessorLogger.info('Creating AutoContentProcessor instance')
 new AutoContentProcessor()
-logger.info('AutoContentProcessor instance created')
+autoProcessorLogger.info('AutoContentProcessor instance created')

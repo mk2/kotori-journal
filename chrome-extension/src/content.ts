@@ -64,17 +64,17 @@ class OGPExtractor {
 
   extractAndSend(): void {
     const ogpData = this.extractWithFallback()
-    logger.info('Extracted OGP data:', ogpData)
+    contentLogger.info('Extracted OGP data:', ogpData)
 
     // Only send if we have some data
     if (Object.keys(ogpData).length > 0) {
-      logger.info('Sending OGP data to background')
+      contentLogger.info('Sending OGP data to background')
       chrome.runtime.sendMessage({
         type: 'ogp-data',
         data: ogpData,
       })
     } else {
-      logger.info('No OGP data to send')
+      contentLogger.info('No OGP data to send')
     }
   }
 
@@ -91,7 +91,7 @@ class OGPExtractor {
 }
 
 // Logger that sends to both console and remote via background script
-const logger = {
+const contentLogger = {
   info: (message: string, data?: any) => {
     console.log(`[Content] ${message}`, data || '')
     // Send to background script for remote logging
@@ -123,12 +123,12 @@ const logger = {
 }
 
 // Initialize OGP extractor
-logger.info('Content script loaded for:', { url: window.location.href })
+contentLogger.info('Content script loaded for:', { url: window.location.href })
 const ogpExtractor = new OGPExtractor()
 
 // Extract OGP data when page is loaded
 function extractOGPData(): void {
-  logger.info('Extracting OGP data for:', { url: window.location.href })
+  contentLogger.info('Extracting OGP data for:', { url: window.location.href })
   // Wait a bit for the page to fully load
   setTimeout(() => {
     ogpExtractor.extractAndSend()
@@ -146,7 +146,7 @@ if (document.readyState === 'loading') {
 let currentUrl = window.location.href
 const observer = new MutationObserver(() => {
   if (window.location.href !== currentUrl) {
-    logger.info('URL changed', { from: currentUrl, to: window.location.href })
+    contentLogger.info('URL changed', { from: currentUrl, to: window.location.href })
     currentUrl = window.location.href
     extractOGPData()
   }
