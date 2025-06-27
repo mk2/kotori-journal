@@ -20,6 +20,7 @@ export class ContentPatternStorage {
     } catch (error) {
       // ファイルが存在しない場合は空のマネージャーを返す
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        // eslint-disable-next-line no-console
         console.error('Failed to load content patterns:', error)
       }
     }
@@ -33,6 +34,7 @@ export class ContentPatternStorage {
       const data = JSON.stringify(patterns, null, 2)
       await fs.writeFile(this.filePath, data, 'utf-8')
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to save content patterns:', error)
       throw error
     }
@@ -43,6 +45,7 @@ export class ContentPatternStorage {
     try {
       await fs.mkdir(dir, { recursive: true })
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to create directory:', error)
       throw error
     }

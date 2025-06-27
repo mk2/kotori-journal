@@ -44,8 +44,8 @@ class PopupController {
     try {
       const status = await this.getStatus()
       this.updateUI(status)
-    } catch (error) {
-      console.error('Failed to load status:', error)
+    } catch {
+      // コンソール出力は無効化
       this.showStatus('接続エラー', 'disconnected')
     }
   }
@@ -96,11 +96,11 @@ class PopupController {
 
     // Toggle switches
     this.elements.enabled.addEventListener('change', () => {
-      console.log('Enabled toggle changed:', this.elements.enabled.checked)
+      // コンソール出力は無効化
     })
 
     this.elements.autoProcessingEnabled.addEventListener('change', () => {
-      console.log('Auto processing toggle changed:', this.elements.autoProcessingEnabled.checked)
+      // コンソール出力は無効化
     })
 
     // Pattern management

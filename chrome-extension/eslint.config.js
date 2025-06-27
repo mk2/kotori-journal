@@ -39,6 +39,7 @@ export default [
         module: 'readonly',
         exports: 'readonly',
         Buffer: 'readonly',
+        process: 'readonly',
 
         // Additional DOM types
         Element: 'readonly',

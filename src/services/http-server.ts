@@ -601,6 +601,55 @@ export class HTTPServer {
       }
     )
 
+    // Chrome extension log endpoint
+    app.post(
+      '/api/chrome-extension/log',
+      authenticate,
+      async (req: Request, res: Response): Promise<void> => {
+        try {
+          const { level, message, data } = req.body
+
+          if (!level || !message) {
+            res.status(400).json({ error: 'Missing required fields: level, message' })
+            return
+          }
+
+          // Log to chrome-extension specific logger
+          const chromeExtLogger = this.logger?.child({ component: 'chrome-extension' })
+
+          const logData = {
+            message,
+            ...data,
+            timestamp: new Date().toISOString(),
+          }
+
+          switch (level) {
+            case 'error':
+              await chromeExtLogger?.error(message, logData)
+              break
+            case 'warn':
+              await chromeExtLogger?.warn(message, logData)
+              break
+            case 'info':
+              await chromeExtLogger?.info(message, logData)
+              break
+            case 'debug':
+              await chromeExtLogger?.debug(message, logData)
+              break
+            default:
+              await chromeExtLogger?.info(message, logData)
+          }
+
+          res.json({ success: true })
+        } catch (error) {
+          await this.logger?.error('Error logging chrome extension message', {
+            error: error instanceof Error ? error.message : error,
+          })
+          res.status(500).json({ error: 'Internal server error' })
+        }
+      }
+    )
+
     // Health check endpoint
     app.get('/health', (req, res) => {
       res.json({ status: 'ok', timestamp: new Date().toISOString() })

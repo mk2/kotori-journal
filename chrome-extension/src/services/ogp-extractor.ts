@@ -58,17 +58,17 @@ export class OGPExtractor {
 
   extractAndSend(): void {
     const ogpData = this.extractWithFallback()
-    console.log('[OGPExtractor] Extracted OGP data:', ogpData)
+    // コンソール出力は無効化
 
     // Only send if we have some data
     if (Object.keys(ogpData).length > 0) {
-      console.log('[OGPExtractor] Sending OGP data to background')
+      // コンソール出力は無効化
       chrome.runtime.sendMessage({
         type: 'ogp-data',
         data: ogpData,
       })
     } else {
-      console.log('[OGPExtractor] No OGP data to send')
+      // コンソール出力は無効化
     }
   }
 
