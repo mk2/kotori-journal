@@ -163,15 +163,65 @@ export class StorageService {
 
     const entriesByCategory = this.groupByCategory(entries)
 
-    for (const [category, categoryEntries] of Object.entries(entriesByCategory)) {
-      content += `## ${category}\n`
+    // 自動処理AI応答を収集
+    const autoProcessedEntries = entries.filter(
+      entry => entry.category === 'AI処理コンテンツ' && entry.metadata?.processedBy === 'claude-ai'
+    )
 
-      for (const entry of categoryEntries) {
+    // 自動処理AI応答がある場合は別セクションで表示
+    if (autoProcessedEntries.length > 0) {
+      content += `## 自動処理されたコンテンツ（AI応答）\n`
+
+      for (const entry of autoProcessedEntries) {
         const time = this.formatTime(entry.timestamp)
-        content += `- ${time} - ${entry.content}\n`
-      }
+        const title = entry.metadata?.title || 'タイトルなし'
+        const url = entry.metadata?.url || ''
+        const patternName = entry.metadata?.patternName || '不明なパターン'
 
-      content += '\n'
+        content += `### ${time} - ${title}\n`
+        content += `- URL: ${url}\n`
+        content += `- 処理パターン: ${patternName}\n`
+        content += `- 内容:\n`
+
+        // AI応答の内容を整形して表示
+        const responseContent = entry.content
+          .replace(/^自動コンテンツ処理完了: .*\n\n/, '') // ヘッダー部分を除去
+          .split('\n')
+          .map(line => `  ${line}`)
+          .join('\n')
+
+        content += `${responseContent}\n\n`
+      }
+    }
+
+    // 通常のエントリーを表示（自動処理済みAI応答以外）
+    for (const [category, categoryEntries] of Object.entries(entriesByCategory)) {
+      // 自動処理済みAI応答は既に表示済みなのでスキップ
+      if (category === 'AI処理コンテンツ') {
+        const nonAutoProcessedEntries = categoryEntries.filter(
+          entry => entry.metadata?.processedBy !== 'claude-ai'
+        )
+
+        if (nonAutoProcessedEntries.length > 0) {
+          content += `## ${category}\n`
+
+          for (const entry of nonAutoProcessedEntries) {
+            const time = this.formatTime(entry.timestamp)
+            content += `- ${time} - ${entry.content}\n`
+          }
+
+          content += '\n'
+        }
+      } else {
+        content += `## ${category}\n`
+
+        for (const entry of categoryEntries) {
+          const time = this.formatTime(entry.timestamp)
+          content += `- ${time} - ${entry.content}\n`
+        }
+
+        content += '\n'
+      }
     }
 
     return content
