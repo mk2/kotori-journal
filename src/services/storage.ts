@@ -168,6 +168,36 @@ export class StorageService {
       entry => entry.category === 'AI処理コンテンツ' && entry.metadata?.processedBy === 'claude-ai'
     )
 
+    // AI会話を収集（質問と応答）
+    const aiQuestions = entries.filter(entry => entry.type === 'ai_question')
+    const aiResponses = entries.filter(entry => entry.type === 'ai_response')
+
+    // AI会話がある場合は別セクションで表示
+    if (aiQuestions.length > 0 || aiResponses.length > 0) {
+      content += `## AI会話\n`
+
+      // 質問と応答をペアにして時系列順に表示
+      const aiConversations = this.pairAIConversations(aiQuestions, aiResponses)
+
+      for (const conversation of aiConversations) {
+        if (conversation.question) {
+          const questionTime = this.formatTime(conversation.question.timestamp)
+          content += `### ${questionTime} - 質問\n`
+          content += `${conversation.question.content}\n\n`
+        }
+
+        if (conversation.response) {
+          const responseTime = this.formatTime(conversation.response.timestamp)
+          content += `### ${responseTime} - 応答\n`
+          const responseContent = conversation.response.content
+            .split('\n')
+            .map((line: string) => `  ${line}`)
+            .join('\n')
+          content += `${responseContent}\n\n`
+        }
+      }
+    }
+
     // 自動処理AI応答がある場合は別セクションで表示
     if (autoProcessedEntries.length > 0) {
       content += `## 自動処理されたコンテンツ（AI応答）\n`
@@ -187,16 +217,16 @@ export class StorageService {
         const responseContent = entry.content
           .replace(/^自動コンテンツ処理完了: .*\n\n/, '') // ヘッダー部分を除去
           .split('\n')
-          .map(line => `  ${line}`)
+          .map((line: string) => `  ${line}`)
           .join('\n')
 
         content += `${responseContent}\n\n`
       }
     }
 
-    // 通常のエントリーを表示（自動処理済みAI応答以外）
+    // 通常のエントリーを表示（AI関連以外）
     for (const [category, categoryEntries] of Object.entries(entriesByCategory)) {
-      // 自動処理済みAI応答は既に表示済みなのでスキップ
+      // AI関連のエントリーは既に専用セクションで表示済みなのでスキップ
       if (category === 'AI処理コンテンツ') {
         const nonAutoProcessedEntries = categoryEntries.filter(
           entry => entry.metadata?.processedBy !== 'claude-ai'
@@ -206,6 +236,22 @@ export class StorageService {
           content += `## ${category}\n`
 
           for (const entry of nonAutoProcessedEntries) {
+            const time = this.formatTime(entry.timestamp)
+            content += `- ${time} - ${entry.content}\n`
+          }
+
+          content += '\n'
+        }
+      } else if (category === 'AI') {
+        // AIカテゴリのエントリーで、ai_question/ai_responseでないものがあれば表示
+        const nonConversationEntries = categoryEntries.filter(
+          entry => entry.type !== 'ai_question' && entry.type !== 'ai_response'
+        )
+
+        if (nonConversationEntries.length > 0) {
+          content += `## ${category}\n`
+
+          for (const entry of nonConversationEntries) {
             const time = this.formatTime(entry.timestamp)
             content += `- ${time} - ${entry.content}\n`
           }
@@ -225,6 +271,47 @@ export class StorageService {
     }
 
     return content
+  }
+
+  private pairAIConversations(
+    questions: JournalEntry[],
+    responses: JournalEntry[]
+  ): Array<{ question?: JournalEntry; response?: JournalEntry }> {
+    const conversations: Array<{ question?: JournalEntry; response?: JournalEntry }> = []
+
+    // すべてのAI関連エントリーを時系列順にソート
+    const allEntries = [...questions, ...responses].sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+    )
+
+    let currentQuestion: JournalEntry | undefined
+
+    for (const entry of allEntries) {
+      if (entry.type === 'ai_question') {
+        // 前の質問が未完了の場合は単独で追加
+        if (currentQuestion) {
+          conversations.push({ question: currentQuestion })
+        }
+        currentQuestion = entry
+      } else if (entry.type === 'ai_response' && currentQuestion) {
+        // 質問と応答をペアにして追加
+        conversations.push({
+          question: currentQuestion,
+          response: entry,
+        })
+        currentQuestion = undefined
+      } else if (entry.type === 'ai_response') {
+        // 質問のない応答は単独で追加
+        conversations.push({ response: entry })
+      }
+    }
+
+    // 最後に未完了の質問があれば追加
+    if (currentQuestion) {
+      conversations.push({ question: currentQuestion })
+    }
+
+    return conversations
   }
 
   private groupByCategory(entries: JournalEntry[]): Record<string, JournalEntry[]> {
