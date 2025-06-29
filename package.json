@@ -8,6 +8,17 @@
   "bin": {
     "kotori": "./dist/cli.js"
   },
+  "pkg": {
+    "scripts": [
+      "dist/**/*.js"
+    ],
+    "assets": [
+      "node_modules/@anthropic-ai/sdk/**/*",
+      "node_modules/react/**/*",
+      "node_modules/ink/**/*"
+    ],
+    "outputPath": "bin"
+  },
   "files": [
     "dist",
     "README.md",
@@ -42,6 +53,7 @@
     "server": "tsx src/cli.tsx server",
     "watch": "tsx watch src/cli.tsx",
     "build": "tsup",
+    "pkg": "npm run build && pkg dist/cli.js --out-path=bin --targets=node22-macos-arm64",
     "test": "vitest run",
     "test:ui": "vitest run --ui",
     "test:coverage": "vitest run --coverage",
@@ -79,6 +91,7 @@
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^16.1.0",
+    "pkg": "^5.8.1",
     "prettier": "^3.5.3",
     "supertest": "^7.1.1",
     "tsup": "^8.5.0",
