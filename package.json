@@ -92,7 +92,6 @@
     "@types/react": "^19.1.7",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "ink": "^6.0.0",
     "ink-select-input": "^6.2.0",
