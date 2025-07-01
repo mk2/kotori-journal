@@ -17,6 +17,7 @@ export type { Plugin } from './models/plugin.js'
 // Utils
 export { getConfig } from './utils/config.js'
 export type { Config } from './utils/config.js'
+export { loadEnvironmentVariables } from './utils/env-loader.js'
 
 // For convenience, users can also import the main services directly
 // Example: import { JournalService, StorageService, ClaudeAIService } from 'kotori-journal'

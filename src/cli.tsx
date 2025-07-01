@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-import dotenv from 'dotenv'
 import React from 'react'
 import { render } from 'ink'
 import { App } from './components/App.js'
 import { getConfig } from './utils/config.js'
 import { ServerCommand } from './commands/server-command.js'
+import { loadEnvironmentVariables } from './utils/env-loader.js'
 
-// .envファイルから環境変数を読み込み
-dotenv.config()
+// .envファイルと.kotori-journalファイルから環境変数を読み込み
+loadEnvironmentVariables()
 
 const config = getConfig()
 
