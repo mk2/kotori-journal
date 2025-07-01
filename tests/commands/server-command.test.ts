@@ -5,6 +5,9 @@ import fs from 'fs/promises'
 import path from 'path'
 
 vi.mock('fs/promises')
+vi.mock('../../src/utils/directory.js', () => ({
+  ensureDirectoryExists: vi.fn(),
+}))
 vi.mock('child_process', () => ({
   spawn: vi.fn(() => ({
     pid: 12345,
@@ -35,16 +38,16 @@ describe('ServerCommand', () => {
   describe('start command', () => {
     it('should start the server with default settings', async () => {
       vi.mocked(fs.access).mockRejectedValue(new Error('File not found'))
-      vi.mocked(fs.mkdir).mockResolvedValue(undefined)
       vi.mocked(fs.writeFile).mockResolvedValue()
+
+      const { ensureDirectoryExists } = await import('../../src/utils/directory.js')
+      vi.mocked(ensureDirectoryExists).mockResolvedValue()
 
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
       await serverCommand.execute(['start'])
 
-      expect(vi.mocked(fs.mkdir)).toHaveBeenCalledWith(path.dirname(mockPidFile), {
-        recursive: true,
-      })
+      expect(vi.mocked(ensureDirectoryExists)).toHaveBeenCalledWith(path.dirname(mockPidFile))
       expect(vi.mocked(fs.writeFile)).toHaveBeenCalledWith(mockPidFile, expect.any(String))
       expect(vi.mocked(fs.writeFile)).toHaveBeenCalledWith(mockConfigFile, expect.any(String))
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Server started'))
@@ -71,8 +74,10 @@ describe('ServerCommand', () => {
 
     it('should accept custom port', async () => {
       vi.mocked(fs.access).mockRejectedValue(new Error('File not found'))
-      vi.mocked(fs.mkdir).mockResolvedValue(undefined)
       vi.mocked(fs.writeFile).mockResolvedValue()
+
+      const { ensureDirectoryExists } = await import('../../src/utils/directory.js')
+      vi.mocked(ensureDirectoryExists).mockResolvedValue()
 
       await serverCommand.execute(['start', '--port', '9000'])
 

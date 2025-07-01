@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { Plugin, PluginSource } from '../models/plugin'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { ensureDirectoryExists } from '../utils/directory.js'
 
 const execAsync = promisify(exec)
 
@@ -102,9 +103,7 @@ export class PluginSourceManager {
   }
 
   private async ensureDir(dirPath: string): Promise<void> {
-    if (!existsSync(dirPath)) {
-      await fs.mkdir(dirPath, { recursive: true })
-    }
+    await ensureDirectoryExists(dirPath)
   }
 
   private async validateLocalPath(pluginPath: string): Promise<void> {

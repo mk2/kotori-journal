@@ -1,5 +1,6 @@
 import fs from 'fs/promises'
 import path from 'path'
+import { ensureDirectoryExists } from '../utils/directory.js'
 
 interface TokenData {
   token: string
@@ -33,7 +34,7 @@ export class TokenStorage {
       token,
       createdAt: new Date().toISOString(),
     }
-    await fs.mkdir(this.dataPath, { recursive: true })
+    await ensureDirectoryExists(this.dataPath)
     await fs.writeFile(this.tokenFile, JSON.stringify(data, null, 2))
   }
 

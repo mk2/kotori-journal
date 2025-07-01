@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs'
 import * as path from 'path'
 import { JournalEntry } from '../models/journal'
+import { ensureDirectoryExists } from '../utils/directory.js'
 
 export interface SearchResult {
   date: string
@@ -13,7 +14,7 @@ export class StorageService {
 
   async saveEntryToTemp(entry: JournalEntry): Promise<void> {
     const tempDir = path.join(this.dataPath, '.temp')
-    await fs.mkdir(tempDir, { recursive: true })
+    await ensureDirectoryExists(tempDir)
 
     const filePath = path.join(tempDir, `${entry.id}.json`)
     await fs.writeFile(filePath, JSON.stringify(entry, null, 2))
@@ -25,7 +26,7 @@ export class StorageService {
     const day = date.getDate().toString().padStart(2, '0')
 
     const reportDir = path.join(this.dataPath, year, month)
-    await fs.mkdir(reportDir, { recursive: true })
+    await ensureDirectoryExists(reportDir)
 
     const reportPath = path.join(reportDir, `${day}.md`)
     const content = this.formatDailyReport(date, entries)
