@@ -2,6 +2,7 @@ import { spawn } from 'child_process'
 import fs from 'fs/promises'
 import path from 'path'
 import { Config } from '../utils/config.js'
+import { ensureDirectoryExists } from '../utils/directory.js'
 
 interface ServerConfig {
   port: number
@@ -190,7 +191,7 @@ export class ServerCommand {
   }
 
   private async ensureDataDir(): Promise<void> {
-    await fs.mkdir(path.dirname(this.pidFile), { recursive: true })
+    await ensureDirectoryExists(path.dirname(this.pidFile))
   }
 
   private showHelp(): void {

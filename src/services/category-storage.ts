@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs'
 import * as path from 'path'
 import { CategoryManager } from '../models/category'
+import { ensureDirectoryExists } from '../utils/directory.js'
 
 export class CategoryStorage {
   private filePath: string
@@ -10,7 +11,7 @@ export class CategoryStorage {
   }
 
   async save(manager: CategoryManager): Promise<void> {
-    await fs.mkdir(this.dataPath, { recursive: true })
+    await ensureDirectoryExists(this.dataPath)
     const data = JSON.stringify(manager.toJSON(), null, 2)
     await fs.writeFile(this.filePath, data)
   }

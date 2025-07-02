@@ -2,6 +2,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { ContentPatternManager } from '../models/content-pattern.js'
 import { ContentPattern } from '../types/content-processing.js'
+import { ensureDirectoryExists } from '../utils/directory.js'
 
 export class ContentPatternStorage {
   private filePath: string
@@ -43,7 +44,7 @@ export class ContentPatternStorage {
   async ensureDirectoryExists(): Promise<void> {
     const dir = path.dirname(this.filePath)
     try {
-      await fs.mkdir(dir, { recursive: true })
+      await ensureDirectoryExists(dir)
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Failed to create directory:', error)

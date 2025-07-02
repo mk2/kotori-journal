@@ -5,6 +5,7 @@ import { Plugin, PluginConfig, PluginSource, PluginContext } from '../models/plu
 import { PluginSourceManager } from './plugin-source-manager'
 import { CommandRegistry } from './command-registry'
 import { Config } from '../utils/config'
+import { ensureDirectoryExists } from '../utils/directory.js'
 
 export class PluginManager {
   private plugins: Map<string, Plugin> = new Map()
@@ -175,9 +176,7 @@ export class PluginManager {
     const configPath = this.getPluginConfigPath()
     const configDir = path.dirname(configPath)
 
-    if (!existsSync(configDir)) {
-      await fs.mkdir(configDir, { recursive: true })
-    }
+    await ensureDirectoryExists(configDir)
 
     const data = {
       plugins: Object.fromEntries(this.pluginConfigs),
@@ -227,9 +226,7 @@ export class PluginManager {
       },
 
       async write(key: string, value: string): Promise<void> {
-        if (!existsSync(pluginDataPath)) {
-          await fs.mkdir(pluginDataPath, { recursive: true })
-        }
+        await ensureDirectoryExists(pluginDataPath)
         const filePath = path.join(pluginDataPath, `${key}.json`)
         await fs.writeFile(filePath, value, 'utf-8')
       },
