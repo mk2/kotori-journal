@@ -1,6 +1,7 @@
 import * as path from 'path'
 import * as fs from 'fs/promises'
 import { existsSync } from 'fs'
+import { ensureDirectoryExists } from '../utils/directory.js'
 
 export class PluginSecurityManager {
   constructor(private dataPath: string) {}
@@ -195,9 +196,7 @@ export class PluginSandbox {
           throw new Error('Storage value too large. Maximum size is 1MB.')
         }
 
-        if (!existsSync(pluginDataPath)) {
-          await fs.mkdir(pluginDataPath, { recursive: true })
-        }
+        await ensureDirectoryExists(pluginDataPath)
         const filePath = path.join(pluginDataPath, `${key}.json`)
         await fs.writeFile(filePath, value, 'utf-8')
       },
