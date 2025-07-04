@@ -16,6 +16,8 @@ import { JournalEntry } from '../models/journal'
 import { SearchView } from './SearchView'
 import { CategoryManagerView } from './CategoryManager'
 import { MultilineTextInput } from './MultilineTextInput'
+import { generateHeaderText, getTerminalWidth, combineHeaderText } from '../utils/responsive-header'
+import { generateTerminalSeparator } from '../utils/responsive-separator'
 
 interface AppProps {
   config: Config
@@ -352,23 +354,26 @@ export const App: React.FC<AppProps> = ({ config }) => {
     )
   }
 
+  // レスポンシブヘッダーテキストを生成
+  const terminalWidth = getTerminalWidth()
+  const headerTexts = generateHeaderText(
+    terminalWidth,
+    journalService?.isAIAvailable() || false,
+    !!commandRegistry
+  )
+
+  // ヘッダーテキストを単一の文字列に結合し、必要に応じて切り詰める
+  const combinedHeaderText = combineHeaderText(headerTexts, terminalWidth)
+
   return (
     <Box flexDirection="column" height="100%">
       {/* ヘッダー部分 */}
       <Box flexDirection="column" flexShrink={0}>
         <Box marginBottom={1}>
-          <Text bold color="cyan">
-            Kotori Journal
-          </Text>
-          <Text dimColor>
-            {' '}
-            - Enter で送信 | Ctrl+J で改行 | Tab でカテゴリ切替 | Esc でメニュー | Ctrl+F で検索 | /
-            でコマンド | Ctrl+D で終了
-          </Text>
-          {journalService?.isAIAvailable() && (
-            <Text color="magenta"> | AI利用可能(/? 質問, /summary, /advice)</Text>
-          )}
-          {commandRegistry && <Text color="cyan"> | プラグインシステム利用可能</Text>}
+          <Text dimColor>{combinedHeaderText}</Text>
+        </Box>
+        <Box marginBottom={1}>
+          <Text>Journal</Text>
         </Box>
 
         {message && (
@@ -454,7 +459,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
 
       {/* 区切り線 */}
       <Box flexShrink={0}>
-        <Text color="gray">{'─'.repeat(50)}</Text>
+        <Text color="gray">{generateTerminalSeparator(terminalWidth)}</Text>
       </Box>
 
       {/* 入力欄（下部固定） */}
