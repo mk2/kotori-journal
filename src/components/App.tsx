@@ -72,6 +72,11 @@ export const App: React.FC<AppProps> = ({ config }) => {
 
           const latestEntries = await journalService.refreshEntries()
           setEntries(latestEntries)
+
+          // カテゴリも更新（外部からの変更を反映）
+          const latestCategories = journalService.getCategories()
+          setCategories(latestCategories)
+
           setLastUpdateTime(currentUpdateTime)
 
           // 次のレンダリング後にスクロール位置を復元
