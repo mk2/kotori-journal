@@ -88,7 +88,7 @@
     "vitest": "^3.2.3"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.53.0",
+    "@anthropic-ai/sdk": "^0.56.0",
     "@types/react": "^19.1.7",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
