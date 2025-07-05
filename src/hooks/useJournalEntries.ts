@@ -58,6 +58,11 @@ export const useJournalEntries = (
     }
   }, [journalService])
 
+  // lastUpdateTimeプロパティが変更された場合にinternalLastUpdateTimeを更新
+  useEffect(() => {
+    setInternalLastUpdateTime(lastUpdateTime)
+  }, [lastUpdateTime])
+
   // 1秒ごとにデータ変更をチェックし、変更があった場合のみ更新するuseEffect
   useEffect(() => {
     if (!journalService) return
@@ -87,7 +92,8 @@ export const useJournalEntries = (
     }, 1000)
 
     return () => globalThis.clearInterval(interval)
-  }, [journalService, internalLastUpdateTime, saveScrollPosition, restoreScrollPosition])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [journalService, saveScrollPosition, restoreScrollPosition])
 
   // 今日のエントリーをフィルタリング
   const todayEntries = entries.filter(entry => {

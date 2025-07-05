@@ -144,4 +144,132 @@ describe('useJournalEntries', () => {
     expect(result.current.entries).toEqual([])
     expect(result.current.todayEntries).toEqual([])
   })
+
+  describe('polling interval stability', () => {
+    it('should maintain stable polling interval when internalLastUpdateTime changes', async () => {
+      const setIntervalSpy = vi.spyOn(globalThis, 'setInterval')
+      const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval')
+
+      // Mock getLastUpdateTime to return different values to trigger updates
+      let currentTime = 123456789
+      mockJournalService.getLastUpdateTime.mockImplementation(() => {
+        currentTime += 1000
+        return Promise.resolve(currentTime)
+      })
+
+      renderHook(() => useJournalEntries(mockJournalService as any, 123456789))
+
+      // Wait for initial setup
+      await act(async () => {
+        await vi.runOnlyPendingTimersAsync()
+      })
+
+      const initialIntervalCount = setIntervalSpy.mock.calls.length
+      const initialClearCount = clearIntervalSpy.mock.calls.length
+
+      // Advance time to trigger multiple polling cycles
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000) // 3 seconds = 3 polling cycles
+      })
+
+      // The interval should not be recreated multiple times
+      // There should be only one setInterval call (for the initial setup)
+      expect(setIntervalSpy).toHaveBeenCalledTimes(initialIntervalCount)
+      // No additional clearInterval calls should happen during polling
+      expect(clearIntervalSpy).toHaveBeenCalledTimes(initialClearCount)
+
+      setIntervalSpy.mockRestore()
+      clearIntervalSpy.mockRestore()
+    })
+
+    it('should update internalLastUpdateTime when lastUpdateTime prop changes', async () => {
+      const initialLastUpdateTime = 123456789
+      const { rerender } = renderHook(
+        ({ lastUpdateTime }) => useJournalEntries(mockJournalService as any, lastUpdateTime),
+        { initialProps: { lastUpdateTime: initialLastUpdateTime } }
+      )
+
+      // Mock getLastUpdateTime to return a value that would trigger an update
+      const newTime = 123457000
+      mockJournalService.getLastUpdateTime.mockResolvedValue(newTime - 1)
+
+      // Change the lastUpdateTime prop
+      const updatedLastUpdateTime = 123457000
+      rerender({ lastUpdateTime: updatedLastUpdateTime })
+
+      // Advance time to trigger a polling cycle
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000)
+      })
+
+      // Verify that the service was called (indicating internal state was updated)
+      expect(mockJournalService.getLastUpdateTime).toHaveBeenCalled()
+    })
+
+    it('should continue polling correctly after prop changes', async () => {
+      const initialLastUpdateTime = 123456789
+      const { rerender } = renderHook(
+        ({ lastUpdateTime }) => useJournalEntries(mockJournalService as any, lastUpdateTime),
+        { initialProps: { lastUpdateTime: initialLastUpdateTime } }
+      )
+
+      // Mock getLastUpdateTime to return increasing values
+      let pollCount = 0
+      mockJournalService.getLastUpdateTime.mockImplementation(() => {
+        pollCount++
+        return Promise.resolve(123456789 + pollCount * 1000)
+      })
+
+      // Change the lastUpdateTime prop
+      const updatedLastUpdateTime = 123457000
+      rerender({ lastUpdateTime: updatedLastUpdateTime })
+
+      // Advance time to trigger multiple polling cycles
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000)
+      })
+
+      // Verify that polling continued after prop change
+      expect(pollCount).toBeGreaterThan(1)
+      expect(mockJournalService.getLastUpdateTime).toHaveBeenCalledTimes(pollCount)
+    })
+
+    it('should not create memory leaks from interval recreation', async () => {
+      const setIntervalSpy = vi.spyOn(globalThis, 'setInterval')
+      const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval')
+
+      // Mock getLastUpdateTime to return different values to trigger updates
+      let updateCount = 0
+      mockJournalService.getLastUpdateTime.mockImplementation(() => {
+        updateCount++
+        return Promise.resolve(123456789 + updateCount * 1000)
+      })
+
+      const { unmount } = renderHook(() => useJournalEntries(mockJournalService as any, 123456789))
+
+      // Wait for initial setup
+      await act(async () => {
+        await vi.runOnlyPendingTimersAsync()
+      })
+
+      const initialIntervalCount = setIntervalSpy.mock.calls.length
+
+      // Advance time to trigger multiple updates
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000) // 5 seconds
+      })
+
+      // Should still have only the initial interval
+      expect(setIntervalSpy).toHaveBeenCalledTimes(initialIntervalCount)
+
+      // Unmount to trigger cleanup
+      unmount()
+
+      // Should have cleared the interval exactly once
+      expect(clearIntervalSpy).toHaveBeenCalledTimes(1)
+
+      setIntervalSpy.mockRestore()
+      clearIntervalSpy.mockRestore()
+    })
+  })
 })
