@@ -1,5 +1,5 @@
 /**
- * @vitest-environment jsdom
+ * @vitest-environment happy-dom
  */
 import { describe, it, expect, vi, beforeEach, Mock, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
