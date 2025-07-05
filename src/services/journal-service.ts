@@ -227,6 +227,10 @@ export class JournalService {
     return this.contentProcessor
   }
 
+  getStorageService(): StorageService {
+    return this.storage
+  }
+
   private async clearPreviousDayTempEntries(tempEntries: JournalEntry[]): Promise<void> {
     const today = new Date()
     today.setHours(0, 0, 0, 0)

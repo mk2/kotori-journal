@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import request from 'supertest'
-import { HTTPServer } from './http-server.js'
-import { JournalService } from './journal-service.js'
-import type { JournalEntry } from '../models/journal.js'
+import { HTTPServer } from '../../src/services/http-server.js'
+import { JournalService } from '../../src/services/journal-service.js'
+import type { JournalEntry } from '../../src/models/journal.js'
 
-vi.mock('./journal-service.js')
+vi.mock('../../src/services/journal-service.js')
 
 describe('HTTPServer', () => {
   let server: HTTPServer
