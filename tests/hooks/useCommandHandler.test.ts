@@ -2,11 +2,9 @@
  * @vitest-environment happy-dom
  */
 import { describe, it, expect, vi, beforeEach, Mock, afterEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { useCommandHandler } from '../../src/hooks/useCommandHandler'
-import { JournalService } from '../../src/services/journal-service'
 import { SearchService } from '../../src/services/search-service'
-import { CommandRegistry } from '../../src/services/command-registry'
 import { JournalEntry } from '../../src/models/journal'
 
 describe('useCommandHandler', () => {

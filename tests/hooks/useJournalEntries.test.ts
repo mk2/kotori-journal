@@ -2,9 +2,8 @@
  * @vitest-environment happy-dom
  */
 import { describe, it, expect, vi, beforeEach, Mock, afterEach } from 'vitest'
-import { renderHook, waitFor, act } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { useJournalEntries } from '../../src/hooks/useJournalEntries'
-import { JournalService } from '../../src/services/journal-service'
 import { JournalEntry } from '../../src/models/journal'
 
 describe('useJournalEntries', () => {
@@ -25,19 +24,19 @@ describe('useJournalEntries', () => {
     mockEntries = [
       {
         id: '1',
-        timestamp: new Date('2024-03-20T09:00:00Z').toISOString(),
+        timestamp: new Date('2024-03-20T09:00:00Z'),
         content: 'Morning entry',
         category: '仕事',
       },
       {
         id: '2',
-        timestamp: new Date('2024-03-20T09:30:00Z').toISOString(),
+        timestamp: new Date('2024-03-20T09:30:00Z'),
         content: 'Another entry',
         category: '個人',
       },
       {
         id: '3',
-        timestamp: new Date('2024-03-19T10:00:00Z').toISOString(),
+        timestamp: new Date('2024-03-19T10:00:00Z'),
         content: 'Yesterday entry',
         category: '仕事',
       },
@@ -74,7 +73,7 @@ describe('useJournalEntries', () => {
 
     const newEntry: JournalEntry = {
       id: '4',
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       content: 'New entry',
       category: '個人',
     }
@@ -92,7 +91,7 @@ describe('useJournalEntries', () => {
       ...mockEntries,
       {
         id: '4',
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
         content: 'Refreshed entry',
         category: '仕事',
       },
