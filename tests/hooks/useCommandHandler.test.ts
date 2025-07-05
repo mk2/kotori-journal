@@ -39,6 +39,7 @@ describe('useCommandHandler', () => {
       getEntries: vi.fn().mockReturnValue([]),
       getJournalEntriesByDate: vi.fn().mockReturnValue([]),
       generateAIResponse: vi.fn().mockResolvedValue('AI response'),
+      getStorageService: vi.fn().mockReturnValue({}),
     }
 
     mockSearchService = {} as SearchService

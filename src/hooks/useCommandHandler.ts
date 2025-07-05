@@ -73,7 +73,7 @@ export const useCommandHandler = ({
             entries: journalService.getEntries(),
             services: {
               journal: journalService,
-              storage: (journalService as unknown as { storage: unknown })['storage'], // private fieldへのアクセス（型エラー回避のため）
+              storage: journalService.getStorageService(),
               search: searchService!,
             },
             ui: {
