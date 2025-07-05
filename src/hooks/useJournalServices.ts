@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { JournalService } from '../services/journal-service'
 import { SearchService } from '../services/search-service'
 import { CommandRegistry } from '../services/command-registry'
@@ -19,6 +19,7 @@ interface UseJournalServicesResult {
   pluginManager: PluginManager | null
   categories: string[]
   lastUpdateTime: number
+  refreshCategories: () => void
 }
 
 export const useJournalServices = (config: Config): UseJournalServicesResult => {
@@ -29,6 +30,12 @@ export const useJournalServices = (config: Config): UseJournalServicesResult => 
   const [pluginManager, setPluginManager] = useState<PluginManager | null>(null)
   const [categories, setCategories] = useState<string[]>([])
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(0)
+
+  const refreshCategories = useCallback(() => {
+    if (journalService) {
+      setCategories(journalService.getCategories())
+    }
+  }, [journalService])
 
   useEffect(() => {
     const initService = async () => {
@@ -74,5 +81,6 @@ export const useJournalServices = (config: Config): UseJournalServicesResult => 
     pluginManager,
     categories,
     lastUpdateTime,
+    refreshCategories,
   }
 }

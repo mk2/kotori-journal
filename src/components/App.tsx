@@ -21,8 +21,15 @@ export const App: React.FC<AppProps> = ({ config }) => {
   const [selectedCategory, setSelectedCategory] = useState(config.defaultCategories[0])
 
   // カスタムフックを使用
-  const { isReady, journalService, searchService, commandRegistry, categories, lastUpdateTime } =
-    useJournalServices(config)
+  const {
+    isReady,
+    journalService,
+    searchService,
+    commandRegistry,
+    categories,
+    lastUpdateTime,
+    refreshCategories,
+  } = useJournalServices(config)
 
   const { entries, todayEntries, setEntries } = useJournalEntries(journalService, lastUpdateTime)
 
@@ -52,6 +59,7 @@ export const App: React.FC<AppProps> = ({ config }) => {
   // カテゴリ更新時の処理
   const updateCategories = () => {
     if (journalService) {
+      refreshCategories()
       const newCategories = journalService.getCategories()
       if (newCategories.length > 0 && !newCategories.includes(selectedCategory)) {
         setSelectedCategory(newCategories[0])

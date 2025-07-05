@@ -2,7 +2,7 @@
  * @vitest-environment happy-dom
  */
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor, act } from '@testing-library/react'
 import { useJournalServices } from '../../src/hooks/useJournalServices'
 import { JournalService } from '../../src/services/journal-service'
 import { SearchService } from '../../src/services/search-service'
@@ -36,10 +36,9 @@ describe('useJournalServices', () => {
     mockConfig = {
       dataPath: '/test/data',
       defaultCategories: ['仕事', '個人'],
-      enableAI: true,
-      aiModel: 'claude-3-opus-20240229',
-      httpServerPort: 3000,
-      enablePlugins: true,
+      aiTrigger: '!',
+      serverPort: 8765,
+      serverAuthToken: 'test-token',
     }
 
     mockJournalService = {
@@ -145,5 +144,30 @@ describe('useJournalServices', () => {
     expect(result.current.isReady).toBe(false)
 
     consoleErrorSpy.mockRestore()
+  })
+
+  it('should refresh categories when refreshCategories is called', async () => {
+    const { result } = renderHook(() => useJournalServices(mockConfig))
+
+    // 初期化完了を待つ
+    await waitFor(() => {
+      expect(result.current.isReady).toBe(true)
+    })
+
+    // 初期カテゴリを確認
+    expect(result.current.categories).toEqual(['仕事', '個人', 'アイデア'])
+
+    // カテゴリリストを変更
+    mockJournalService.getCategories.mockReturnValue(['仕事', '個人', 'アイデア', '新しいカテゴリ'])
+
+    // refreshCategories を呼び出し
+    act(() => {
+      result.current.refreshCategories()
+    })
+
+    // カテゴリが更新されることを確認
+    await waitFor(() => {
+      expect(result.current.categories).toEqual(['仕事', '個人', 'アイデア', '新しいカテゴリ'])
+    })
   })
 })
