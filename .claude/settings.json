@@ -19,5 +19,18 @@
       "Bash(mv:*)"
     ],
     "deny": ["Bash(git add:*)", "Bash(git push:*)", "Bash(git fetch:*)"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npm run verify"
+          }
+        ]
+      }
+    ]
   }
 }
