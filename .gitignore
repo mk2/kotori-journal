@@ -7,3 +7,4 @@ coverage/
 *.log
 kotori-journal-data/
 .temp/
+.devcontainer/.env.local.devcontainer
